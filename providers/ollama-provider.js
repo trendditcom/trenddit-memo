@@ -45,6 +45,9 @@ export class OllamaProvider extends LLMProvider {
 
             if (!response.ok) {
                 console.error(`[Ollama Debug] Service responded with error status ${response.status}`);
+                if (response.status === 403) {
+                    throw new Error(`Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service`);
+                }
                 throw new Error(`Service responded with status ${response.status}`);
             }
 
@@ -78,6 +81,9 @@ export class OllamaProvider extends LLMProvider {
 
             if (!response.ok) {
                 console.error(`[Ollama Debug] Failed to fetch models with status: ${response.status}`);
+                if (response.status === 403) {
+                    throw new Error(`Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service`);
+                }
                 throw new Error(`Failed to fetch models: ${response.status}`);
             }
 
@@ -141,6 +147,9 @@ export class OllamaProvider extends LLMProvider {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error(`Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service`);
+                }
                 throw new Error(`Ollama chat failed: ${response.status} ${response.statusText}`);
             }
 

@@ -408,192 +408,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Initialize provider configuration manager
-    providerConfigManager = new ProviderConfigManager();
-
-    // Initialize provider settings
-    await initializeProviderSettings();
-
-    async function initializeProviderSettings() {
-        try {
-            // Get available providers and populate dropdown
-            const availableProviders = LLMProviderFactory.getAvailableProviders();
-            const providerSelect = document.getElementById('providerSelect');
-            
-            availableProviders.forEach(provider => {
-                const option = document.createElement('option');
-                option.value = provider.id;
-                option.textContent = provider.name;
-                option.title = provider.description;
-                providerSelect.appendChild(option);
-            });
-
-            // Check for legacy configuration and migrate if needed
-            const migrated = await providerConfigManager.migrateFromLegacy();
-
-            // Load current configuration
-            const currentConfig = await providerConfigManager.getCurrentConfig();
-            if (currentConfig) {
-                // Set provider selection
-                providerSelect.value = currentConfig.type;
-                await showProviderConfig(currentConfig.type, currentConfig.model);
-                
-                // Populate fields with current values
-                await populateProviderFields(currentConfig);
-            }
-
-            // Add provider selection change handler
-            providerSelect.addEventListener('change', async (e) => {
-                const selectedProvider = e.target.value;
-                await showProviderConfig(selectedProvider);
-            });
-
-            // Update provider indicator after migration and config loading
-            await updateProviderIndicator();
-
-        } catch (error) {
-            console.error('Failed to initialize provider settings:', error);
-            showStatus('error', 'Failed to initialize provider settings');
-        }
-    }
-
-    async function showProviderConfig(providerType, selectedModel = null) {
-        // Hide all provider configs
-        const configs = ['anthropicConfig', 'openaiConfig', 'geminiConfig', 'ollamaConfig'];
-        configs.forEach(configId => {
-            document.getElementById(configId).classList.add('hidden');
-        });
-
-        // Hide model selection initially
-        document.getElementById('modelSelection').classList.add('hidden');
-
-        if (!providerType) return;
-
-        // Show relevant config
-        const configMap = {
-            'anthropic': 'anthropicConfig',
-            'openai': 'openaiConfig',
-            'gemini': 'geminiConfig',
-            'ollama': 'ollamaConfig'
-        };
-
-        const configId = configMap[providerType];
-        if (configId) {
-            document.getElementById(configId).classList.remove('hidden');
-            document.getElementById('modelSelection').classList.remove('hidden');
-        }
-
-        // Populate model dropdown
-        const providers = LLMProviderFactory.getAvailableProviders();
-        const provider = providers.find(p => p.id === providerType);
-        if (provider) {
-            const modelSelect = document.getElementById('modelSelect');
-            modelSelect.innerHTML = '';
-            
-            if (providerType === 'ollama') {
-                // For Ollama, we need to dynamically load models
-                // Show model selection but with special handling
-                document.getElementById('modelSelection').classList.add('hidden');
-                
-                // Initialize Ollama event listeners when showing Ollama config
-                console.log('[Ollama Debug] Showing Ollama config, initializing event listeners');
-                setTimeout(() => {
-                    initializeOllamaEventListeners();
-                    // Also trigger initial model refresh when Ollama is selected
-                    console.log('[Ollama Debug] Triggering initial model refresh');
-                    refreshOllamaModels().catch(err => {
-                        console.error('[Ollama Debug] Initial model refresh failed:', err);
-                    });
-                }, 100); // Small delay to ensure DOM is ready
-            } else {
-                // For other providers, use predefined models
-                provider.models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model;
-                    option.textContent = model;
-                    modelSelect.appendChild(option);
-                });
-
-                // Set the selected model if provided
-                if (selectedModel && provider.models.includes(selectedModel)) {
-                    modelSelect.value = selectedModel;
-                }
-            }
-        }
-    }
-
-    async function populateProviderFields(config) {
-        const { type, apiKey, host, port, model } = config;
-        
-        // Populate provider-specific fields
-        switch (type) {
-            case 'anthropic':
-                document.getElementById('anthropicKey').value = apiKey || '';
-                break;
-            case 'openai':
-                document.getElementById('openaiKey').value = apiKey || '';
-                break;
-            case 'gemini':
-                document.getElementById('geminiKey').value = apiKey || '';
-                break;
-            case 'ollama':
-                document.getElementById('ollamaHost').value = host || 'localhost';
-                document.getElementById('ollamaPort').value = port || 11434;
-                document.getElementById('ollamaModel').value = model || '';
-                // Load available models and check service status
-                if (providerConfigManager) {
-                    await refreshOllamaModels();
-                } else {
-                    console.warn('providerConfigManager not ready, skipping initial Ollama model refresh');
-                }
-                break;
-        }
-
-        // Model selection is now handled in showProviderConfig function
-    }
-
-    // Update provider indicator in HTML title and UI
-    async function updateProviderIndicator() {
-        try {
-            const currentConfig = await providerConfigManager.getCurrentConfig();
-            const baseTitle = 'Trenddit Memo';
-            const providerIndicatorElement = document.getElementById('providerIndicator');
-            
-            if (currentConfig && currentConfig.type) {
-                // Map provider types to display names
-                const providerNames = {
-                    'anthropic': 'Claude',
-                    'openai': 'GPT',
-                    'gemini': 'Gemini',
-                    'ollama': 'Ollama'
-                };
-                
-                const providerName = providerNames[currentConfig.type] || currentConfig.type;
-                document.title = baseTitle; // Keep simple title since provider is shown in UI
-                
-                // Update the UI element
-                if (providerIndicatorElement) {
-                    providerIndicatorElement.textContent = `Using ${providerName}`;
-                }
-            } else {
-                document.title = baseTitle;
-                
-                // Update the UI element
-                if (providerIndicatorElement) {
-                    providerIndicatorElement.textContent = 'No provider configured';
-                }
-            }
-        } catch (error) {
-            console.error('Failed to update provider indicator:', error);
-            document.title = 'Trenddit Memo';
-            
-            // Update the UI element with error state
-            const providerIndicatorElement = document.getElementById('providerIndicator');
-            if (providerIndicatorElement) {
-                providerIndicatorElement.textContent = 'Provider unknown';
-            }
-        }
-    }
 
     // Add save settings handler
     document.getElementById('saveSettings').addEventListener('click', async () => {
@@ -767,6 +581,188 @@ chrome.runtime.onMessage.addListener((message) => {
     }
 });
 
+// Provider settings initialization and management functions
+async function initializeProviderSettings() {
+    try {
+        // Get available providers and populate dropdown
+        const availableProviders = LLMProviderFactory.getAvailableProviders();
+        const providerSelect = document.getElementById('providerSelect');
+        
+        availableProviders.forEach(provider => {
+            const option = document.createElement('option');
+            option.value = provider.id;
+            option.textContent = provider.name;
+            option.title = provider.description;
+            providerSelect.appendChild(option);
+        });
+
+        // Check for legacy configuration and migrate if needed
+        const migrated = await providerConfigManager.migrateFromLegacy();
+
+        // Load current configuration
+        const currentConfig = await providerConfigManager.getCurrentConfig();
+        if (currentConfig) {
+            // Set provider selection
+            providerSelect.value = currentConfig.type;
+            await showProviderConfig(currentConfig.type, currentConfig.model);
+            
+            // Populate fields with current values
+            await populateProviderFields(currentConfig);
+        }
+
+        // Add provider selection change handler
+        providerSelect.addEventListener('change', async (e) => {
+            const selectedProvider = e.target.value;
+            await showProviderConfig(selectedProvider);
+        });
+
+        // Update provider indicator after migration and config loading
+        await updateProviderIndicator();
+
+    } catch (error) {
+        console.error('Failed to initialize provider settings:', error);
+        showStatus('error', 'Failed to initialize provider settings');
+    }
+}
+
+async function showProviderConfig(providerType, selectedModel = null) {
+    // Hide all provider configs
+    const configs = ['anthropicConfig', 'openaiConfig', 'geminiConfig', 'ollamaConfig'];
+    configs.forEach(configId => {
+        document.getElementById(configId).classList.add('hidden');
+    });
+
+    // Hide model selection initially
+    document.getElementById('modelSelection').classList.add('hidden');
+
+    if (!providerType) return;
+
+    // Show relevant config
+    const configMap = {
+        'anthropic': 'anthropicConfig',
+        'openai': 'openaiConfig',
+        'gemini': 'geminiConfig',
+        'ollama': 'ollamaConfig'
+    };
+
+    const configId = configMap[providerType];
+    if (configId) {
+        document.getElementById(configId).classList.remove('hidden');
+        document.getElementById('modelSelection').classList.remove('hidden');
+    }
+
+    // Populate model dropdown
+    const providers = LLMProviderFactory.getAvailableProviders();
+    const provider = providers.find(p => p.id === providerType);
+    if (provider) {
+        const modelSelect = document.getElementById('modelSelect');
+        modelSelect.innerHTML = '';
+        
+        if (providerType === 'ollama') {
+            // For Ollama, we need to dynamically load models
+            // Show model selection but with special handling
+            document.getElementById('modelSelection').classList.add('hidden');
+            
+            // Initialize Ollama event listeners when showing Ollama config
+            console.log('[Ollama Debug] Showing Ollama config, initializing event listeners');
+            setTimeout(() => {
+                initializeOllamaEventListeners();
+                // Also trigger initial model refresh when Ollama is selected
+                console.log('[Ollama Debug] Triggering initial model refresh');
+                refreshOllamaModels().catch(err => {
+                    console.error('[Ollama Debug] Initial model refresh failed:', err);
+                });
+            }, 100); // Small delay to ensure DOM is ready
+        } else {
+            // For other providers, use predefined models
+            provider.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+
+            // Set the selected model if provided
+            if (selectedModel && provider.models.includes(selectedModel)) {
+                modelSelect.value = selectedModel;
+            }
+        }
+    }
+}
+
+async function populateProviderFields(config) {
+    const { type, apiKey, host, port, model } = config;
+    
+    // Populate provider-specific fields
+    switch (type) {
+        case 'anthropic':
+            document.getElementById('anthropicKey').value = apiKey || '';
+            break;
+        case 'openai':
+            document.getElementById('openaiKey').value = apiKey || '';
+            break;
+        case 'gemini':
+            document.getElementById('geminiKey').value = apiKey || '';
+            break;
+        case 'ollama':
+            document.getElementById('ollamaHost').value = host || 'localhost';
+            document.getElementById('ollamaPort').value = port || 11434;
+            document.getElementById('ollamaModel').value = model || '';
+            // Load available models and check service status
+            if (providerConfigManager) {
+                await refreshOllamaModels();
+            } else {
+                console.warn('providerConfigManager not ready, skipping initial Ollama model refresh');
+            }
+            break;
+    }
+
+    // Model selection is now handled in showProviderConfig function
+}
+
+// Update provider indicator in HTML title and UI
+async function updateProviderIndicator() {
+    try {
+        const currentConfig = await providerConfigManager.getCurrentConfig();
+        const baseTitle = 'Trenddit Memo';
+        const providerIndicatorElement = document.getElementById('providerIndicator');
+        
+        if (currentConfig && currentConfig.type) {
+            // Map provider types to display names
+            const providerNames = {
+                'anthropic': 'Claude',
+                'openai': 'GPT',
+                'gemini': 'Gemini',
+                'ollama': 'Ollama'
+            };
+            
+            const providerName = providerNames[currentConfig.type] || currentConfig.type;
+            document.title = baseTitle; // Keep simple title since provider is shown in UI
+            
+            // Update the UI element
+            if (providerIndicatorElement) {
+                providerIndicatorElement.textContent = `Using ${providerName}`;
+            }
+        } else {
+            document.title = baseTitle;
+            
+            // Update the UI element
+            if (providerIndicatorElement) {
+                providerIndicatorElement.textContent = 'No provider configured';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to update provider indicator:', error);
+        document.title = 'Trenddit Memo';
+        
+        // Update the UI element with error state
+        const providerIndicatorElement = document.getElementById('providerIndicator');
+        if (providerIndicatorElement) {
+            providerIndicatorElement.textContent = 'Provider unknown';
+        }
+    }
+}
+
 // Check if any provider is configured
 async function checkProviderConfiguration() {
     try {
@@ -815,13 +811,17 @@ async function initializeExtension() {
             }
         }
 
-        // Legacy API key handling removed - using new provider configuration system
+        // Initialize provider configuration manager
+        providerConfigManager = new ProviderConfigManager();
+        
+        // Initialize provider settings
+        await initializeProviderSettings();
 
         // Initialize other components
         await initializeTags();
         loadMemos();
         
-        // Check API key after initialization
+        // Check provider configuration after initialization
         await checkProviderConfiguration();
 
         // Backup metadata to sync storage
