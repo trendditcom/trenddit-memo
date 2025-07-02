@@ -1,6 +1,6 @@
 # Issues
 
-[ ] Review how this was handled for Anthropic Model API, this may give you ideas to solve it for Ollama Model API. Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service
+[x] Review how this was handled for Anthropic Model API, this may give you ideas to solve it for Ollama Model API. Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service
 
 
 [x] Fixed. Provider configuration manager now initializes properly in initializeExtension() function, ensuring keys and model selections persist on extension reload.

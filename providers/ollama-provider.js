@@ -14,14 +14,20 @@ export class OllamaProvider extends LLMProvider {
 
     async initialize(apiKey = null) {
         // Ollama doesn't use API keys, but we need to test service connectivity
+        // Following Anthropic's pattern: don't fail initialization on connection issues
         try {
             await this.testConnection();
             await this.loadAvailableModels();
-            this.initialized = true;
-            return true;
+            console.log('Ollama provider test connection successful');
         } catch (error) {
-            throw new Error(`Failed to connect to Ollama: ${error.message}`);
+            console.warn('Ollama provider test connection failed, but proceeding with initialization:', error.message);
+            console.warn('Note: If you see CORS errors, ensure Ollama is configured with OLLAMA_ORIGIN=chrome-extension://* environment variable');
+            // Continue with initialization - actual API calls will show specific errors when they happen
+            // This allows recovery from temporary connectivity issues
         }
+        
+        this.initialized = true;
+        return true;
     }
 
     async testConnection() {
@@ -46,7 +52,14 @@ export class OllamaProvider extends LLMProvider {
             if (!response.ok) {
                 console.error(`[Ollama Debug] Service responded with error status ${response.status}`);
                 if (response.status === 403) {
-                    throw new Error(`Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service`);
+                    const corsMessage = `Ollama CORS Error (403): Chrome extension requests are blocked.\n\n` +
+                        `To fix this:\n` +
+                        `1. Stop Ollama service\n` +
+                        `2. Set environment variable: OLLAMA_ORIGIN=chrome-extension://*\n` +
+                        `3. Restart Ollama service\n\n` +
+                        `On macOS/Linux: export OLLAMA_ORIGIN="chrome-extension://*" && ollama serve\n` +
+                        `On Windows: set OLLAMA_ORIGIN=chrome-extension://* && ollama serve`;
+                    throw new Error(corsMessage);
                 }
                 throw new Error(`Service responded with status ${response.status}`);
             }
@@ -82,7 +95,14 @@ export class OllamaProvider extends LLMProvider {
             if (!response.ok) {
                 console.error(`[Ollama Debug] Failed to fetch models with status: ${response.status}`);
                 if (response.status === 403) {
-                    throw new Error(`Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service`);
+                    const corsMessage = `Ollama CORS Error (403): Chrome extension requests are blocked.\n\n` +
+                        `To fix this:\n` +
+                        `1. Stop Ollama service\n` +
+                        `2. Set environment variable: OLLAMA_ORIGIN=chrome-extension://*\n` +
+                        `3. Restart Ollama service\n\n` +
+                        `On macOS/Linux: export OLLAMA_ORIGIN="chrome-extension://*" && ollama serve\n` +
+                        `On Windows: set OLLAMA_ORIGIN=chrome-extension://* && ollama serve`;
+                    throw new Error(corsMessage);
                 }
                 throw new Error(`Failed to fetch models: ${response.status}`);
             }
@@ -148,7 +168,14 @@ export class OllamaProvider extends LLMProvider {
 
             if (!response.ok) {
                 if (response.status === 403) {
-                    throw new Error(`Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service`);
+                    const corsMessage = `Ollama CORS Error (403): Chrome extension requests are blocked.\n\n` +
+                        `To fix this:\n` +
+                        `1. Stop Ollama service\n` +
+                        `2. Set environment variable: OLLAMA_ORIGIN=chrome-extension://*\n` +
+                        `3. Restart Ollama service\n\n` +
+                        `On macOS/Linux: export OLLAMA_ORIGIN="chrome-extension://*" && ollama serve\n` +
+                        `On Windows: set OLLAMA_ORIGIN=chrome-extension://* && ollama serve`;
+                    throw new Error(corsMessage);
                 }
                 throw new Error(`Ollama chat failed: ${response.status} ${response.statusText}`);
             }
@@ -222,7 +249,12 @@ Important: Ensure your response is valid JSON that can be parsed.`;
                 selectedTag: parsedResponse.suggested_tags?.[0] || 'general'
             };
         } catch (error) {
-            throw new Error(`Memo processing failed: ${error.message}`);
+            // Provide more context for CORS errors
+            if (error.message.includes('CORS Error')) {
+                throw new Error(`Memo processing failed: ${error.message}`);
+            }
+            // Add suggestion to check Ollama service for other errors
+            throw new Error(`Memo processing failed: ${error.message}. Please ensure Ollama service is running and accessible.`);
         }
     }
 
