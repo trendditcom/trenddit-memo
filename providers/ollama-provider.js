@@ -26,12 +26,19 @@ export class OllamaProvider extends LLMProvider {
 
     async testConnection() {
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
             const response = await fetch(`${this.baseUrl}/api/tags`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Service responded with status ${response.status}`);
@@ -41,14 +48,25 @@ export class OllamaProvider extends LLMProvider {
             return true;
         } catch (error) {
             this.serviceAvailable = false;
+            if (error.name === 'AbortError') {
+                throw new Error(`Ollama service timeout - check if service is running on ${this.baseUrl}`);
+            }
             throw new Error(`Ollama service not available: ${error.message}`);
         }
     }
 
     async loadAvailableModels() {
         try {
-            const response = await fetch(`${this.baseUrl}/api/tags`);
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const response = await fetch(`${this.baseUrl}/api/tags`, {
+                signal: controller.signal
+            });
             
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch models: ${response.status}`);
             }
@@ -61,7 +79,11 @@ export class OllamaProvider extends LLMProvider {
                 this.model = this.availableModels[0].name;
             }
         } catch (error) {
-            console.warn('Failed to load available models:', error.message);
+            if (error.name === 'AbortError') {
+                console.warn('Loading models timed out:', error.message);
+            } else {
+                console.warn('Failed to load available models:', error.message);
+            }
             this.availableModels = [];
         }
     }
@@ -76,11 +98,16 @@ export class OllamaProvider extends LLMProvider {
         }
 
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for chat
+
             const response = await fetch(`${this.baseUrl}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                signal: controller.signal,
                 body: JSON.stringify({
                     model: this.model,
                     messages: messages,
@@ -91,6 +118,8 @@ export class OllamaProvider extends LLMProvider {
                     }
                 })
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Ollama chat failed: ${response.status} ${response.statusText}`);
@@ -107,6 +136,9 @@ export class OllamaProvider extends LLMProvider {
                 }
             };
         } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error(`Ollama chat timeout - model may be slow or service unavailable`);
+            }
             throw new Error(`Ollama chat error: ${error.message}`);
         }
     }
@@ -180,13 +212,20 @@ Important: Ensure your response is valid JSON that can be parsed.`;
         }
 
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
             const response = await fetch(`${this.baseUrl}/api/show`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                signal: controller.signal,
                 body: JSON.stringify({ name: model })
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Failed to get model info: ${response.status}`);
@@ -194,19 +233,29 @@ Important: Ensure your response is valid JSON that can be parsed.`;
 
             return await response.json();
         } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error(`Model info timeout - check if service is running`);
+            }
             throw new Error(`Model info error: ${error.message}`);
         }
     }
 
     async pullModel(modelName) {
         try {
+            // Add timeout to prevent hanging (longer timeout for model downloads)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout for model pull
+
             const response = await fetch(`${this.baseUrl}/api/pull`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                signal: controller.signal,
                 body: JSON.stringify({ name: modelName })
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Failed to pull model: ${response.status}`);
@@ -216,6 +265,9 @@ Important: Ensure your response is valid JSON that can be parsed.`;
             // you might want to handle the stream for progress updates
             return await response.json();
         } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error(`Model pull timeout - download may be slow or service unavailable`);
+            }
             throw new Error(`Model pull error: ${error.message}`);
         }
     }

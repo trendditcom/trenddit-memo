@@ -9,7 +9,9 @@
     "esbuild": "^0.20.1"
   },
   "scripts": {
-    "build": "esbuild background.js --bundle --outfile=dist/background.bundle.js --platform=browser --format=esm"
+    "build": "esbuild background.js --bundle --outfile=dist/background.bundle.js --platform=browser --format=esm",
+    "test": "node --experimental-modules tests/run-all-tests.js",
+    "test:browser": "echo 'Open tests/test.html in browser to run tests'"
   },
   "type": "module"
 } 

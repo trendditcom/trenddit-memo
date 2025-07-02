@@ -1,6 +1,8 @@
 # Issues
 
-[ ] Review the tests in the project and configure the test runner correctly
+[x] When Ollama provider is selected the models drop down does not list installed models. Refresh Models link does not do anything. There is a constant message belore models dropdown "Checking service..."
+
+[x] Review the tests in the project and configure the test runner correctly
 
 [x] When I stat Chat with Memos and enter first prompt, sometimes I get the response "I apologize, but I encountered an error. Please try again". Second turn results in response from LLM as expected.
 
