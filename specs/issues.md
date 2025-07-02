@@ -1,5 +1,7 @@
 # Issues
 
+[x] Uncaught ReferenceError: initializeOllamaEventListeners is not defined. Context: sidepanel.html. Line 347: initializeOllamaEventListeners();
+
 [x] This is still not fixed. Add browser developer console debug messages for helping fix his. Test the Ollama API connection. Research online about access localhost Ollama REST API using Chrome browser extension. Repeating Error: When Ollama provider is selected the models drop down does not list installed models. Refresh Models link does not do anything. There is a constant message belore models dropdown "Checking service..."
 
 [x] Review the tests in the project and configure the test runner correctly
