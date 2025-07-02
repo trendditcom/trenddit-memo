@@ -18,15 +18,19 @@ export class GeminiProvider extends LLMProvider {
         }
 
         this.apiKey = apiKey;
-        this.initialized = true;
         
-        // Test connection by listing models
+        // Test connection - but don't fail initialization if this fails
+        // This allows the provider to be initialized even during temporary connectivity issues
         try {
             await this.testConnection();
-            return true;
+            console.log('Gemini provider test connection successful');
         } catch (error) {
-            throw new Error(`Google AI API authentication failed: ${error.message}`);
+            console.warn('Gemini provider test connection failed, but proceeding with initialization:', error.message);
+            // Continue with initialization - the actual API calls will show errors when they happen
         }
+        
+        this.initialized = true;
+        return true;
     }
 
     async testConnection() {

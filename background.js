@@ -37,7 +37,19 @@ class ProviderManager {
 
     async processChat(messages, options = {}) {
         if (!this.currentProvider || !this.currentProvider.initialized) {
-            throw new Error('LLM provider not configured');
+            // Try to reinitialize the provider if configuration exists
+            const result = await chrome.storage.local.get(['llmConfig']);
+            if (result.llmConfig) {
+                console.log('Attempting to reinitialize provider for chat...');
+                try {
+                    await this.initializeProvider(result.llmConfig);
+                } catch (error) {
+                    console.error('Failed to reinitialize provider:', error);
+                    throw new Error('LLM provider not configured');
+                }
+            } else {
+                throw new Error('LLM provider not configured');
+            }
         }
         return await this.currentProvider.chat(messages, options);
     }

@@ -56,14 +56,18 @@ export class AnthropicProvider extends LLMProvider {
         this.apiKey = apiKey;
         this.client = new AnthropicClient(apiKey);
         
-        // Test connection
+        // Test connection - but don't fail initialization if this fails
+        // This allows the provider to be initialized even during temporary connectivity issues
         try {
             await this.testConnection();
-            this.initialized = true;
-            return true;
+            console.log('Anthropic provider test connection successful');
         } catch (error) {
-            throw new Error(`Failed to initialize Anthropic provider: ${error.message}`);
+            console.warn('Anthropic provider test connection failed, but proceeding with initialization:', error.message);
+            // Continue with initialization - the actual API calls will show errors when they happen
         }
+        
+        this.initialized = true;
+        return true;
     }
 
     async testConnection() {

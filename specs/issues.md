@@ -1,5 +1,7 @@
 # Issues
 
+[x] When I stat Chat with Memos and enter first prompt, sometimes I get the response "I apologize, but I encountered an error. Please try again". Second turn results in response from LLM as expected.
+
 [x] Connection test failed: Google AI API authentication failed: Gemini connection test failed: Gemini response blocked: MAX_TOKENS
 
 
