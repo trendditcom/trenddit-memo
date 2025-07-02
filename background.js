@@ -15,10 +15,8 @@ class ProviderManager {
         try {
             this.currentProvider = LLMProviderFactory.createProvider(config.type, config);
             
-            // Initialize provider with API key
-            if (config.apiKey) {
-                await this.currentProvider.initialize(config.apiKey);
-            }
+            // Initialize provider (with API key if available)
+            await this.currentProvider.initialize(config.apiKey || null);
             
             this.initialized = this.currentProvider.initialized;
             return true;

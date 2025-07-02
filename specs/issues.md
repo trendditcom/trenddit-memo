@@ -1,6 +1,6 @@
 # Issues
 
-[ ] When Ollama is selected. Capture action does not start LLM processing. Get this error: Error processing memo: Error: Provider not initialized.
+[x] When Ollama is selected. Capture action does not start LLM processing. Get this error: Error processing memo: Error: Provider not initialized.
 
 
 [x] When Ollama is selected and content is captured the memo is not saved.
