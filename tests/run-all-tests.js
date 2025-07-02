@@ -30,6 +30,31 @@ global.fetch = async (url, options) => {
     throw new Error('Fetch is mocked - tests should mock specific endpoints');
 };
 
+// Mock jest functions
+global.jest = {
+    fn: () => {
+        const mockFn = (...args) => mockFn._mockReturnValue;
+        mockFn._mockReturnValue = undefined;
+        mockFn.mockResolvedValue = (value) => {
+            mockFn._mockReturnValue = Promise.resolve(value);
+            return mockFn;
+        };
+        mockFn.mockResolvedValueOnce = (value) => {
+            if (!mockFn._resolvedValues) mockFn._resolvedValues = [];
+            mockFn._resolvedValues.push(Promise.resolve(value));
+            const originalFn = mockFn;
+            return {
+                ...mockFn,
+                mockResolvedValueOnce: (nextValue) => {
+                    mockFn._resolvedValues.push(Promise.resolve(nextValue));
+                    return mockFn;
+                }
+            };
+        };
+        return mockFn;
+    }
+};
+
 class NodeTestRunner {
     constructor() {
         this.results = { passed: 0, failed: 0, total: 0 };
@@ -90,6 +115,48 @@ class NodeTestRunner {
                         throw new Error(`Expected error containing "${expectedError}", got "${error.message}"`);
                     }
                 }
+            },
+            rejects: {
+                toThrow: async (expectedError) => {
+                    try {
+                        await actual;
+                        throw new Error('Expected promise to reject');
+                    } catch (error) {
+                        if (expectedError && !error.message.includes(expectedError)) {
+                            throw new Error(`Expected error containing "${expectedError}", got "${error.message}"`);
+                        }
+                    }
+                }
+            },
+            toBeDefined: () => {
+                if (actual === undefined) {
+                    throw new Error(`Expected ${actual} to be defined`);
+                }
+            },
+            toBeNull: () => {
+                if (actual !== null) {
+                    throw new Error(`Expected ${actual} to be null`);
+                }
+            },
+            toBeGreaterThan: (expected) => {
+                if (actual <= expected) {
+                    throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                }
+            },
+            toBeLessThan: (expected) => {
+                if (actual >= expected) {
+                    throw new Error(`Expected ${actual} to be less than ${expected}`);
+                }
+            },
+            toContain: (expected) => {
+                if (!actual.includes(expected)) {
+                    throw new Error(`Expected ${actual} to contain ${expected}`);
+                }
+            },
+            toHaveProperty: (property) => {
+                if (!(property in actual)) {
+                    throw new Error(`Expected ${actual} to have property ${property}`);
+                }
             }
         };
     }
@@ -116,6 +183,36 @@ global.describe = testRunner.describe.bind(testRunner);
 global.it = testRunner.it.bind(testRunner);
 global.expect = testRunner.expect.bind(testRunner);
 global.beforeEach = () => {}; // Mock beforeEach for now
+global.afterEach = () => {}; // Mock afterEach for now
+
+// Add async test support
+const originalIt = testRunner.it.bind(testRunner);
+testRunner.it = function(description, testFn) {
+    this.results.total++;
+    try {
+        const result = testFn();
+        if (result && typeof result.then === 'function') {
+            // Async test
+            return result.then(
+                () => {
+                    this.results.passed++;
+                    console.log(`  ✅ ${description}`);
+                },
+                (error) => {
+                    this.results.failed++;
+                    console.log(`  ❌ ${description}: ${error.message}`);
+                }
+            );
+        } else {
+            // Sync test
+            this.results.passed++;
+            console.log(`  ✅ ${description}`);
+        }
+    } catch (error) {
+        this.results.failed++;
+        console.log(`  ❌ ${description}: ${error.message}`);
+    }
+};
 
 async function runAllTests() {
     console.log('🧪 Running Node.js Tests...\n');

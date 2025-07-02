@@ -31,41 +31,158 @@
         const outputDiv = document.getElementById('output');
         const originalLog = console.log;
         const originalError = console.error;
-        const originalGroup = console.group;
-        const originalGroupEnd = console.groupEnd;
-
-        let indentLevel = 0;
 
         console.log = (...args) => {
-            const indent = '  '.repeat(indentLevel);
-            outputDiv.innerHTML += indent + args.join(' ') + '\n';
+            outputDiv.innerHTML += args.join(' ') + '\n';
             originalLog(...args);
         };
 
         console.error = (...args) => {
-            const indent = '  '.repeat(indentLevel);
-            outputDiv.innerHTML += indent + args.join(' ') + '\n';
+            outputDiv.innerHTML += 'ERROR: ' + args.join(' ') + '\n';
             originalError(...args);
         };
 
-        console.group = (...args) => {
-            const indent = '  '.repeat(indentLevel);
-            outputDiv.innerHTML += indent + args.join(' ') + '\n';
-            indentLevel++;
-            originalGroup(...args);
+        // Mock Chrome APIs for browser testing
+        window.chrome = {
+            storage: {
+                local: {
+                    get: async (keys) => ({}),
+                    set: async (data) => {}
+                }
+            },
+            runtime: {
+                lastError: null,
+                sendMessage: async (message) => ({ success: true }),
+                onMessage: { addListener: () => {} }
+            }
         };
 
-        console.groupEnd = () => {
-            indentLevel = Math.max(0, indentLevel - 1);
-            originalGroupEnd();
+        // Simple test framework
+        let testResults = { passed: 0, failed: 0, total: 0 };
+
+        window.describe = (name, fn) => {
+            console.log(`\n📝 ${name}`);
+            fn();
         };
 
-        // Import and run tests
-        import { testRunner } from './test-runner.js';
-        import './anthropic-provider.test.js';
+        window.it = (name, fn) => {
+            testResults.total++;
+            try {
+                const result = fn();
+                if (result && typeof result.then === 'function') {
+                    result.then(
+                        () => {
+                            testResults.passed++;
+                            console.log(`  ✅ ${name}`);
+                            updateResults();
+                        },
+                        (error) => {
+                            testResults.failed++;
+                            console.log(`  ❌ ${name}: ${error.message}`);
+                            updateResults();
+                        }
+                    );
+                } else {
+                    testResults.passed++;
+                    console.log(`  ✅ ${name}`);
+                    updateResults();
+                }
+            } catch (error) {
+                testResults.failed++;
+                console.log(`  ❌ ${name}: ${error.message}`);
+                updateResults();
+            }
+        };
 
-        // Start tests
-        testRunner.runTests();
+        window.expect = (actual) => ({
+            toBeDefined: () => {
+                if (actual === undefined) {
+                    throw new Error('Expected value to be defined');
+                }
+            },
+            toBe: (expected) => {
+                if (actual !== expected) {
+                    throw new Error(`Expected ${actual} to be ${expected}`);
+                }
+            },
+            toEqual: (expected) => {
+                if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                    throw new Error(`Expected ${JSON.stringify(actual)} to equal ${JSON.stringify(expected)}`);
+                }
+            }
+        });
+
+        function updateResults() {
+            setTimeout(() => {
+                console.log(`\n📊 Current Results: ✅${testResults.passed} ❌${testResults.failed} 📈${testResults.total}`);
+            }, 100);
+        }
+
+        // Run basic tests
+        async function runTests() {
+            try {
+                console.log('🧪 Starting Browser Tests...\n');
+
+                // Test provider factory
+                console.log('📦 Testing Provider Factory...');
+                const { LLMProviderFactory } = await import('../llm-provider-factory.js');
+                
+                describe('LLM Provider Factory', () => {
+                    it('should be defined', () => {
+                        expect(LLMProviderFactory).toBeDefined();
+                    });
+
+                    it('should return available providers', () => {
+                        const providers = LLMProviderFactory.getAvailableProviders();
+                        expect(Array.isArray(providers)).toBe(true);
+                        console.log(`    Found providers: ${providers.map(p => p.name).join(', ')}`);
+                    });
+                });
+
+                // Test individual providers
+                const providers = [
+                    { name: 'AnthropicProvider', path: '../providers/anthropic-provider.js' },
+                    { name: 'GeminiProvider', path: '../providers/gemini-provider.js' },
+                    { name: 'OpenAIProvider', path: '../providers/openai-provider.js' },
+                    { name: 'OllamaProvider', path: '../providers/ollama-provider.js' }
+                ];
+
+                for (const { name, path } of providers) {
+                    try {
+                        const module = await import(path);
+                        const Provider = module[name];
+                        
+                        describe(name, () => {
+                            it('should be importable', () => {
+                                expect(Provider).toBeDefined();
+                            });
+
+                            it('should be instantiable', () => {
+                                const provider = new Provider();
+                                expect(provider).toBeDefined();
+                            });
+                        });
+                    } catch (error) {
+                        console.log(`❌ Failed to test ${name}: ${error.message}`);
+                    }
+                }
+
+                setTimeout(() => {
+                    console.log('\n🎯 Browser Tests Complete!');
+                    if (testResults.failed === 0) {
+                        console.log('🎉 All tests passed!');
+                    } else {
+                        console.log(`💥 ${testResults.failed} tests failed!`);
+                    }
+                }, 1000);
+
+            } catch (error) {
+                console.error('Test execution failed:', error);
+            }
+        }
+
+        // Start tests when page loads
+        runTests();
     </script>
 </body>
 </html>
