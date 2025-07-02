@@ -1,5 +1,7 @@
 # Issues
 
+[x] Fixed. The issue was using OLLAMA_ORIGIN instead of OLLAMA_ORIGINS (note the plural). Updated error messages in Ollama provider to clearly indicate the correct environment variable name (OLLAMA_ORIGINS), provide proper setup instructions including stopping all processes first, and reference the detailed setup documentation in docs/ollama-setup.md. Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Chrome extension requests are blocked.
+
 [x] Setup export OLLAMA_ORIGIN="chrome-extension://*" but still getting the same error: Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Chrome extension requests are blocked... Research online for a solution.
 
 Solution: The issue occurs because OLLAMA_ORIGIN environment variable isn't being recognized. Fixed by:
