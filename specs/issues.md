@@ -1,5 +1,10 @@
 # Issues
 
+[ ] When Ollama is selected. Capture action does not start LLM processing. Get this error: Error processing memo: Error: Provider not initialized.
+
+
+[x] When Ollama is selected and content is captured the memo is not saved.
+
 [x] Repeat issue, not fixed. Research online to find a solution. Uncaught ReferenceError: initializeOllamaEventListeners is not defined. Context: sidepanel.html. Line 347: initializeOllamaEventListeners();
 
 [x] This is still not fixed. Add browser developer console debug messages for helping fix his. Test the Ollama API connection. Research online about access localhost Ollama REST API using Chrome browser extension. Repeating Error: When Ollama provider is selected the models drop down does not list installed models. Refresh Models link does not do anything. There is a constant message belore models dropdown "Checking service..."
