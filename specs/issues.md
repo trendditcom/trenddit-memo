@@ -1,5 +1,27 @@
 # Issues
 
+[x] Setup export OLLAMA_ORIGIN="chrome-extension://*" but still getting the same error: Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Chrome extension requests are blocked... Research online for a solution.
+
+Solution: The issue occurs because OLLAMA_ORIGIN environment variable isn't being recognized. Fixed by:
+1. Creating comprehensive setup documentation in docs/ollama-setup.md
+2. The correct environment variable is OLLAMA_ORIGINS (plural) not OLLAMA_ORIGIN
+3. Recommended approach: `OLLAMA_ORIGINS="*" ollama serve` or `OLLAMA_ORIGINS="chrome-extension://*" ollama serve`
+4. Must completely stop any running Ollama processes before setting the environment variable
+5. Alternative solutions provided including launch scripts and wildcard origins
+
+ollama serve       
+time=2025-07-02T12:22:50.436-07:00 level=INFO source=routes.go:1235 msg="server config" env="map[HTTPS_PROXY: HTTP_PROXY: NO_PROXY: OLLAMA_CONTEXT_LENGTH:4096 OLLAMA_DEBUG:INFO OLLAMA_FLASH_ATTENTION:false OLLAMA_GPU_OVERHEAD:0 OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE:5m0s OLLAMA_KV_CACHE_TYPE: OLLAMA_LLM_LIBRARY: OLLAMA_LOAD_TIMEOUT:5m0s OLLAMA_MAX_LOADED_MODELS:0 OLLAMA_MAX_QUEUE:512 OLLAMA_MODELS:/Users/manavsehgal/.ollama/models OLLAMA_MULTIUSER_CACHE:false OLLAMA_NEW_ENGINE:false OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:0 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://* vscode-webview://* vscode-file://*] OLLAMA_SCHED_SPREAD:false http_proxy: https_proxy: no_proxy:]"
+time=2025-07-02T12:22:50.441-07:00 level=INFO source=images.go:476 msg="total blobs: 71"
+time=2025-07-02T12:22:50.441-07:00 level=INFO source=images.go:483 msg="total unused blobs removed: 0"
+time=2025-07-02T12:22:50.442-07:00 level=INFO source=routes.go:1288 msg="Listening on 127.0.0.1:11434 (version 0.9.3)"
+time=2025-07-02T12:22:50.472-07:00 level=INFO source=types.go:130 msg="inference compute" id=0 library=metal variant="" compute="" driver=0.0 name="" total="27.0 GiB" available="27.0 GiB"
+[GIN] 2025/07/02 - 12:23:31 | 200 |    7.817292ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2025/07/02 - 12:23:31 | 200 |    3.179583ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2025/07/02 - 12:23:35 | 200 |    6.977167ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2025/07/02 - 12:23:35 | 200 |    6.302125ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2025/07/02 - 12:23:44 | 403 |      34.167µs |       127.0.0.1 | POST     "/api/chat"
+
+
 [x] Review how this was handled for Anthropic Model API, this may give you ideas to solve it for Ollama Model API. Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Please configure Ollama to accept Chrome extension requests by setting: OLLAMA_ORIGIN=chrome-extension://* environment variable and restart Ollama service
 
 
