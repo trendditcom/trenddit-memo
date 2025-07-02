@@ -1,5 +1,9 @@
 # Issues
 
+[x] Provider keys and model selections should persist in same way as memos persist between different reloads/sessions of the extension
+
+[x] When Ollama is selected. Capture memo action leads to this error: Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama chat failed: 403 Forbidden
+
 [x] When Ollama is selected. Capture action does not start LLM processing. Get this error: Error processing memo: Error: Provider not initialized.
 
 

@@ -13,7 +13,7 @@ import {
     createTagElement,
     addNewTag
 } from './tags.js';
-import { saveToStorage, backupData, showDeleteConfirmation } from './storage.js';
+import { saveToStorage, backupData, showDeleteConfirmation, initializeStorageRecovery } from './storage.js';
 import { 
     countWords, 
     deleteMemo, 
@@ -786,6 +786,9 @@ async function checkProviderConfiguration() {
 // Initialize extension
 async function initializeExtension() {
     try {
+        // Initialize storage recovery first
+        await initializeStorageRecovery();
+        
         // Load API key and data from storage
         const result = await chrome.storage.local.get([
             'anthropicApiKey',

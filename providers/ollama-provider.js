@@ -128,7 +128,12 @@ export class OllamaProvider extends LLMProvider {
                     stream: false,
                     options: {
                         temperature: options.temperature || 0.7,
-                        ...options
+                        // Only include valid Ollama options
+                        ...(options.top_p && { top_p: options.top_p }),
+                        ...(options.top_k && { top_k: options.top_k }),
+                        ...(options.repeat_penalty && { repeat_penalty: options.repeat_penalty }),
+                        ...(options.seed && { seed: options.seed }),
+                        ...(options.num_predict && { num_predict: options.num_predict })
                     }
                 })
             });
@@ -179,7 +184,11 @@ Important: Ensure your response is valid JSON that can be parsed.`;
         ];
 
         try {
-            const response = await this.chat(messages, options);
+            // Filter out non-Ollama options (url, tags) before passing to chat
+            const chatOptions = {
+                temperature: options.temperature || 0.7
+            };
+            const response = await this.chat(messages, chatOptions);
             
             // Parse the JSON response
             let parsedResponse;

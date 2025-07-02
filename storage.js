@@ -1,12 +1,22 @@
 import { showStatus } from './status.js';
 
+// Load recovery function on initialization
+export async function initializeStorageRecovery() {
+    try {
+        // Attempt to recover provider config if missing
+        await recoverProviderConfig();
+    } catch (error) {
+        console.error('Storage recovery initialization failed:', error);
+    }
+}
+
 // Save to storage and backup if needed
 export async function saveToStorage(key, data) {
     try {
         await chrome.storage.local.set({ [key]: data });
         
         // Create backup for important data
-        if (['memos', 'tags', 'savedChats'].includes(key)) {
+        if (['memos', 'tags', 'savedChats', 'llmConfig'].includes(key)) {
             await backupData();
         }
     } catch (error) {
@@ -63,10 +73,11 @@ export function showDeleteConfirmation(message) {
 // Create minimal backup to sync storage
 export async function backupData() {
     try {
-        const result = await chrome.storage.local.get(['memos', 'tags', 'savedChats']);
+        const result = await chrome.storage.local.get(['memos', 'tags', 'savedChats', 'llmConfig']);
         const memos = result.memos || [];
         const tags = result.tags || [];
         const savedChats = result.savedChats || [];
+        const llmConfig = result.llmConfig || null;
         
         // Create minimal backup of memos (just essential fields)
         const memosMeta = memos.map(memo => ({
@@ -84,13 +95,29 @@ export async function backupData() {
             timestamp: chat.timestamp
         }));
         
+        // Create minimal backup of provider config (without API keys for security)
+        const providerMeta = llmConfig ? {
+            type: llmConfig.type,
+            model: llmConfig.model,
+            host: llmConfig.host, // for Ollama
+            port: llmConfig.port, // for Ollama
+            lastUpdated: llmConfig.lastUpdated
+        } : null;
+        
         try {
             // Try to backup everything
-            await chrome.storage.sync.set({
+            const backupData = {
                 memos_meta: memosMeta,
                 chats_meta: chatsMeta,
                 tags
-            });
+            };
+            
+            // Add provider config if it exists
+            if (providerMeta) {
+                backupData.provider_meta = providerMeta;
+            }
+            
+            await chrome.storage.sync.set(backupData);
         } catch (error) {
             console.warn('Failed to backup all data, trying just tags:', error);
             // If quota exceeded, just backup tags
@@ -99,5 +126,35 @@ export async function backupData() {
     } catch (error) {
         console.error('Failed to create backup:', error);
         showStatus('error', 'Failed to create backup');
+    }
+}
+
+// Recover provider configuration from sync storage backup
+export async function recoverProviderConfig() {
+    try {
+        const syncResult = await chrome.storage.sync.get(['provider_meta']);
+        const localResult = await chrome.storage.local.get(['llmConfig']);
+        
+        // If local config exists or no backup available, nothing to recover
+        if (localResult.llmConfig || !syncResult.provider_meta) {
+            return false;
+        }
+        
+        // Restore provider configuration (user will need to re-enter API key)
+        const restoredConfig = {
+            ...syncResult.provider_meta,
+            // Note: API key not restored for security - user must re-enter
+            apiKey: null,
+            restored: true,
+            lastUpdated: Date.now()
+        };
+        
+        await saveToStorage('llmConfig', restoredConfig);
+        console.log('Provider configuration recovered from backup');
+        showStatus('success', 'Provider settings recovered - please re-enter API key');
+        return true;
+    } catch (error) {
+        console.error('Failed to recover provider config:', error);
+        return false;
     }
 } 

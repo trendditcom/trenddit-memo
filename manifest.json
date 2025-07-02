@@ -12,6 +12,10 @@
   ],
   "host_permissions": [
     "https://api.anthropic.com/*",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*",
     "<all_urls>"
   ],
   "content_security_policy": {

@@ -1,5 +1,6 @@
 // Provider configuration management system
 import { LLMProviderFactory } from '../llm-provider-factory.js';
+import { saveToStorage } from '../storage.js';
 
 export class ProviderConfigManager {
     constructor() {
@@ -42,13 +43,10 @@ export class ProviderConfigManager {
                 lastUpdated: Date.now()
             };
 
-            this.storage.local.set({ llmConfig: configWithTimestamp }, () => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                    resolve(true);
-                }
-            });
+            // Use centralized storage function to ensure backup
+            saveToStorage('llmConfig', configWithTimestamp)
+                .then(() => resolve(true))
+                .catch(error => reject(error));
         });
     }
 
