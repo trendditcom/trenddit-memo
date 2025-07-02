@@ -340,7 +340,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // For Ollama, we need to dynamically load models
                 // Show model selection but with special handling
                 document.getElementById('modelSelection').classList.add('hidden');
-                // Ollama model selection is handled in its own UI section
+                
+                // Initialize Ollama event listeners when showing Ollama config
+                console.log('[Ollama Debug] Showing Ollama config, initializing event listeners');
+                setTimeout(() => {
+                    initializeOllamaEventListeners();
+                    // Also trigger initial model refresh when Ollama is selected
+                    console.log('[Ollama Debug] Triggering initial model refresh');
+                    refreshOllamaModels().catch(err => {
+                        console.error('[Ollama Debug] Initial model refresh failed:', err);
+                    });
+                }, 100); // Small delay to ensure DOM is ready
             } else {
                 // For other providers, use predefined models
                 provider.models.forEach(model => {
@@ -377,7 +387,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('ollamaPort').value = port || 11434;
                 document.getElementById('ollamaModel').value = model || '';
                 // Load available models and check service status
-                await refreshOllamaModels();
+                if (providerConfigManager) {
+                    await refreshOllamaModels();
+                } else {
+                    console.warn('providerConfigManager not ready, skipping initial Ollama model refresh');
+                }
                 break;
         }
 
@@ -1175,12 +1189,40 @@ function displayTagFilteredSavedChats(tagName) {
 
     // Ollama-specific functions
     async function refreshOllamaModels() {
+        console.log('[Ollama Debug] refreshOllamaModels called');
         const statusDot = document.getElementById('ollamaStatusDot');
         const statusText = document.getElementById('ollamaStatusText');
         const modelSelect = document.getElementById('ollamaModel');
         const refreshButton = document.getElementById('refreshOllamaModels');
         
+        // Check if elements exist
+        if (!statusDot || !statusText || !modelSelect || !refreshButton) {
+            console.warn('[Ollama Debug] Ollama UI elements not found:', {
+                statusDot: !!statusDot,
+                statusText: !!statusText,
+                modelSelect: !!modelSelect,
+                refreshButton: !!refreshButton
+            });
+            
+            // If elements don't exist, try to set a default status message
+            const statusElement = document.getElementById('ollamaStatusText');
+            if (statusElement) {
+                statusElement.textContent = 'UI elements not ready';
+            }
+            return;
+        }
+        
+        // Check if providerConfigManager is initialized
+        if (!providerConfigManager) {
+            console.warn('[Ollama Debug] providerConfigManager not initialized, skipping Ollama model refresh');
+            statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-red-400';
+            statusText.textContent = 'Configuration manager not ready';
+            modelSelect.innerHTML = '<option value="">Configuration not ready</option>';
+            return;
+        }
+        
         // Show loading state
+        console.log('[Ollama Debug] Setting loading state');
         statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-yellow-400';
         statusText.textContent = 'Checking service...';
         refreshButton.disabled = true;
@@ -1191,52 +1233,91 @@ function displayTagFilteredSavedChats(tagName) {
             const port = parseInt(document.getElementById('ollamaPort').value) || 11434;
             
             const config = { host, port };
-            const result = await providerConfigManager.testOllamaConnection(config);
+            console.log('[Ollama Debug] Testing connection with config:', config);
             
-            if (result.success) {
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Connection test timed out after 15 seconds')), 15000);
+            });
+            
+            const result = await Promise.race([
+                providerConfigManager.testOllamaConnection(config),
+                timeoutPromise
+            ]);
+            
+            console.log('[Ollama Debug] Connection test result:', result);
+            
+            if (result && result.success) {
                 // Service is available
+                console.log('[Ollama Debug] Service is available, updating UI');
                 statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-green-400';
                 statusText.textContent = 'Service available';
                 
                 // Update model dropdown
                 modelSelect.innerHTML = '<option value="">Select model...</option>';
-                result.models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model.name;
-                    option.textContent = `${model.name} (${model.size || 'Unknown size'})`;
-                    modelSelect.appendChild(option);
-                });
                 
-                if (result.models.length === 0) {
-                    statusText.textContent = 'Service available - No models found';
+                if (result.models && Array.isArray(result.models)) {
+                    console.log('[Ollama Debug] Processing models:', result.models);
+                    result.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.name;
+                        option.textContent = `${model.name} (${model.size || 'Unknown size'})`;
+                        modelSelect.appendChild(option);
+                    });
+                    
+                    if (result.models.length === 0) {
+                        console.log('[Ollama Debug] No models found');
+                        statusText.textContent = 'Service available - No models found';
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No models available - Download models using "ollama pull"';
+                        option.disabled = true;
+                        modelSelect.appendChild(option);
+                    } else {
+                        console.log('[Ollama Debug] Successfully loaded models');
+                        statusText.textContent = `Service available - ${result.models.length} models found`;
+                    }
+                } else {
+                    console.log('[Ollama Debug] No models data returned');
+                    statusText.textContent = 'Service available - No models data';
                     const option = document.createElement('option');
                     option.value = '';
-                    option.textContent = 'No models available - Download models using "ollama pull"';
+                    option.textContent = 'No models data returned';
                     option.disabled = true;
                     modelSelect.appendChild(option);
                 }
             } else {
                 // Service is not available
+                console.log('[Ollama Debug] Service is not available:', result);
                 statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-red-400';
-                statusText.textContent = `Service unavailable: ${result.error}`;
+                statusText.textContent = `Service unavailable: ${result ? result.error : 'Unknown error'}`;
                 modelSelect.innerHTML = '<option value="">Service not available</option>';
             }
         } catch (error) {
             // Error occurred
+            console.error('[Ollama Debug] Error in refreshOllamaModels:', error);
             statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-red-400';
             statusText.textContent = `Error: ${error.message}`;
             modelSelect.innerHTML = '<option value="">Error loading models</option>';
         } finally {
+            // Always reset the button state
+            console.log('[Ollama Debug] Resetting button state');
             refreshButton.disabled = false;
             refreshButton.textContent = 'Refresh Models';
         }
     }
 
-    // Add event listeners for Ollama
-    document.addEventListener('DOMContentLoaded', () => {
+    // Add event listeners for Ollama after the page is fully loaded
+    const initializeOllamaEventListeners = () => {
+        console.log('[Ollama Debug] Initializing Ollama event listeners');
         const refreshButton = document.getElementById('refreshOllamaModels');
         if (refreshButton) {
+            console.log('[Ollama Debug] Found refresh button, adding event listener');
+            // Remove existing listeners to avoid duplicates
+            refreshButton.removeEventListener('click', refreshOllamaModels);
             refreshButton.addEventListener('click', refreshOllamaModels);
+        } else {
+            console.warn('[Ollama Debug] Refresh button not found in DOM');
         }
         
         // Auto-refresh models when host or port changes
@@ -1244,11 +1325,28 @@ function displayTagFilteredSavedChats(tagName) {
         const portInput = document.getElementById('ollamaPort');
         
         if (hostInput) {
+            console.log('[Ollama Debug] Found host input, adding event listener');
+            hostInput.removeEventListener('blur', refreshOllamaModels);
             hostInput.addEventListener('blur', refreshOllamaModels);
+        } else {
+            console.warn('[Ollama Debug] Host input not found in DOM');
         }
         
         if (portInput) {
+            console.log('[Ollama Debug] Found port input, adding event listener');
+            portInput.removeEventListener('blur', refreshOllamaModels);
             portInput.addEventListener('blur', refreshOllamaModels);
+        } else {
+            console.warn('[Ollama Debug] Port input not found in DOM');
         }
+    };
+
+    // Initialize event listeners immediately and also on DOM content loaded
+    initializeOllamaEventListeners();
+    
+    // Also initialize on DOM content loaded as a fallback
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('[Ollama Debug] DOM content loaded, reinitializing event listeners');
+        initializeOllamaEventListeners();
     });
 } 

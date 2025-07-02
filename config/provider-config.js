@@ -370,16 +370,22 @@ export class ProviderConfigManager {
     }
 
     async testOllamaConnection(ollamaConfig) {
+        console.log('[Config Debug] Testing Ollama connection with config:', ollamaConfig);
         try {
             const provider = LLMProviderFactory.createProvider('ollama', ollamaConfig);
+            console.log('[Config Debug] Created Ollama provider, testing connection');
             await provider.testConnection();
+            console.log('[Config Debug] Connection test passed, loading models');
             await provider.loadAvailableModels();
+            const models = provider.getAvailableModels();
+            console.log('[Config Debug] Models loaded:', models);
             
             return {
                 success: true,
-                models: provider.getAvailableModels()
+                models: models
             };
         } catch (error) {
+            console.error('[Config Debug] Ollama connection test failed:', error);
             return {
                 success: false,
                 error: error.message

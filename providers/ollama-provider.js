@@ -25,11 +25,13 @@ export class OllamaProvider extends LLMProvider {
     }
 
     async testConnection() {
+        console.log(`[Ollama Debug] Testing connection to ${this.baseUrl}/api/tags`);
         try {
             // Add timeout to prevent hanging
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+            console.log(`[Ollama Debug] Making fetch request to ${this.baseUrl}/api/tags`);
             const response = await fetch(`${this.baseUrl}/api/tags`, {
                 method: 'GET',
                 headers: {
@@ -39,15 +41,19 @@ export class OllamaProvider extends LLMProvider {
             });
 
             clearTimeout(timeoutId);
+            console.log(`[Ollama Debug] Received response with status: ${response.status}`);
 
             if (!response.ok) {
+                console.error(`[Ollama Debug] Service responded with error status ${response.status}`);
                 throw new Error(`Service responded with status ${response.status}`);
             }
 
             this.serviceAvailable = true;
+            console.log(`[Ollama Debug] Connection test successful`);
             return true;
         } catch (error) {
             this.serviceAvailable = false;
+            console.error(`[Ollama Debug] Connection test failed:`, error);
             if (error.name === 'AbortError') {
                 throw new Error(`Ollama service timeout - check if service is running on ${this.baseUrl}`);
             }
@@ -56,29 +62,37 @@ export class OllamaProvider extends LLMProvider {
     }
 
     async loadAvailableModels() {
+        console.log(`[Ollama Debug] Loading available models from ${this.baseUrl}/api/tags`);
         try {
             // Add timeout to prevent hanging
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+            console.log(`[Ollama Debug] Making fetch request for models`);
             const response = await fetch(`${this.baseUrl}/api/tags`, {
                 signal: controller.signal
             });
             
             clearTimeout(timeoutId);
+            console.log(`[Ollama Debug] Models response status: ${response.status}`);
 
             if (!response.ok) {
+                console.error(`[Ollama Debug] Failed to fetch models with status: ${response.status}`);
                 throw new Error(`Failed to fetch models: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log(`[Ollama Debug] Raw models data:`, data);
             this.availableModels = data.models || [];
+            console.log(`[Ollama Debug] Parsed ${this.availableModels.length} models:`, this.availableModels.map(m => m.name || m));
             
             // If no model is selected and models are available, use the first one
             if (!this.model && this.availableModels.length > 0) {
                 this.model = this.availableModels[0].name;
+                console.log(`[Ollama Debug] Auto-selected model: ${this.model}`);
             }
         } catch (error) {
+            console.error(`[Ollama Debug] Error loading models:`, error);
             if (error.name === 'AbortError') {
                 console.warn('Loading models timed out:', error.message);
             } else {
