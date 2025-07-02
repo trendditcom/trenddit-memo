@@ -89,6 +89,75 @@ chmod +x ollama-chrome.sh
 3. Click "Test Connection"
 4. If successful, you should see available models
 
+## macOS App (Spotlight) vs Terminal Launch
+
+### Important: No Functional Difference
+The Ollama binary behaves identically whether launched from Spotlight or terminal - only the configuration method differs.
+
+### For macOS App Users (Launched from Spotlight)
+
+When using the Ollama macOS app, you need to configure environment variables differently:
+
+1. **Set environment variable using launchctl**:
+   ```bash
+   launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"
+   ```
+
+2. **Restart the Ollama app**:
+   - Quit Ollama from the menu bar
+   - Relaunch from Spotlight or Applications
+
+3. **Verify the setting**:
+   ```bash
+   launchctl getenv OLLAMA_ORIGINS
+   ```
+
+**Note:** These settings persist across sessions but may be reset after macOS updates.
+
+### Permanent Configuration for macOS App
+
+Create a LaunchAgent for persistent configuration:
+
+1. **Create plist file**:
+   ```bash
+   cat > ~/Library/LaunchAgents/com.ollama.environment.plist << EOF
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+   <plist version="1.0">
+   <dict>
+     <key>Label</key>
+     <string>com.ollama.environment</string>
+     <key>ProgramArguments</key>
+     <array>
+       <string>launchctl</string>
+       <string>setenv</string>
+       <string>OLLAMA_ORIGINS</string>
+       <string>chrome-extension://*</string>
+     </array>
+     <key>RunAtLoad</key>
+     <true/>
+   </dict>
+   </plist>
+   EOF
+   ```
+
+2. **Load the LaunchAgent**:
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.ollama.environment.plist
+   ```
+
+3. **Restart Ollama app**
+
+### Terminal vs App Comparison
+
+| Feature | Terminal (`ollama serve`) | macOS App (Spotlight) |
+|---------|---------------------------|----------------------|
+| CORS Behavior | Same defaults | Same defaults |
+| Environment Variables | Inline or shell profile | launchctl or LaunchAgent |
+| Configuration Persistence | Session only (unless in profile) | Persists (until updates) |
+| Logs Location | Terminal output | Console.app |
+| Best For | Development | Production use |
+
 ### Security Note
 
 Using `OLLAMA_ORIGINS="*"` allows requests from any origin. For production use, consider:

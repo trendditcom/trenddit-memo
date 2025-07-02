@@ -198,7 +198,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Will respond asynchronously
     } else if (request.action === 'chatMessage') {
         providerManager.processChat(request.messages)
-            .then(response => sendResponse(response))
+            .then(response => {
+                // Format response to match expected format
+                sendResponse({ 
+                    success: true, 
+                    reply: response.content || response.reply || response.message,
+                    usage: response.usage || null
+                });
+            })
             .catch(error => {
                 console.error('Chat API error:', error);
                 sendResponse({ 

@@ -697,7 +697,15 @@ async function showProviderConfig(providerType, selectedModel = null) {
                 modelSelect.appendChild(option);
             });
 
-            // Set the selected model if provided
+            // Get the current config to restore model selection
+            if (!selectedModel && providerConfigManager) {
+                const currentConfig = await providerConfigManager.getCurrentConfig();
+                if (currentConfig && currentConfig.type === providerType && currentConfig.model) {
+                    selectedModel = currentConfig.model;
+                }
+            }
+
+            // Set the selected model if provided or from config
             if (selectedModel && provider.models.includes(selectedModel)) {
                 modelSelect.value = selectedModel;
             }

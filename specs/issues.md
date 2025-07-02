@@ -1,10 +1,16 @@
 # Issues
 
-[ ] Research online if the solution for making Ollama work with our extension only works with `ollama serve` in terminal or is there a way for it to work when Ollama is run from spotlight.
+[x] Fixed. Research online if the solution for making Ollama work with our extension only works with `ollama serve` in terminal or is there a way for it to work when Ollama is run from spotlight.
 
-[ ] Check if despite persistance of model selection and provider keys, when switching between screens why the persisted settings not restored.
+Solution: Both Ollama app (Spotlight launch) and terminal launch have identical CORS behavior - only the configuration method differs. For the macOS app, use `launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"` then restart the app. For terminal use, set environment variables inline: `OLLAMA_ORIGINS="chrome-extension://*" ollama serve`. Comprehensive documentation added to docs/ollama-setup.md with comparison table and setup instructions for both methods.
 
-[ ] When chatting with Ollama model I can see the Ollama server logs the call correctly however I get response as "I apologize, but I encountered an error. Please try again". Ollama server logs: [GIN] 2025/07/02 - 16:14:10 | 200 |  7.014360958s |       127.0.0.1 | POST     "/api/chat"
+[x] Fixed. Check if despite persistance of model selection and provider keys, when switching between screens why the persisted settings not restored.
+
+Solution: Updated `showProviderConfig` function in sidepanel.js to automatically restore model selection from stored configuration when switching screens. Added logic to retrieve current config and restore the selected model for the active provider, ensuring settings persistence across UI navigation.
+
+[x] Fixed. When chatting with Ollama model I can see the Ollama server logs the call correctly however I get response as "I apologize, but I encountered an error. Please try again". Ollama server logs: [GIN] 2025/07/02 - 16:14:10 | 200 |  7.014360958s |       127.0.0.1 | POST     "/api/chat"
+
+Solution: Fixed response format mismatch in background.js. The sidepanel expected `{ success: true, reply: 'content' }` but providers were returning `{ content: 'content', usage: {...} }`. Updated chat message handler to properly format provider responses to match the expected structure, allowing Ollama and other providers to work correctly with the chat interface.
 
 
 [x] Fixed. Updated Ollama provider's `processMemo` method to match Anthropic's approach exactly - now uses the same system message format, includes available tags for better tag selection, follows the same JSON response format, and uses the same JSON parsing logic. The memo structure and quality are now consistent between providers, with differences only due to underlying LLM capabilities.
