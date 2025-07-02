@@ -1,6 +1,7 @@
 import { AnthropicProvider } from './providers/anthropic-provider.js';
 import { OpenAIProvider } from './providers/openai-provider.js';
 import { GeminiProvider } from './providers/gemini-provider.js';
+import { OllamaProvider } from './providers/ollama-provider.js';
 
 // Factory class for creating LLM provider instances
 export class LLMProviderFactory {
@@ -12,6 +13,8 @@ export class LLMProviderFactory {
                 return new OpenAIProvider(config);
             case 'gemini':
                 return new GeminiProvider(config);
+            case 'ollama':
+                return new OllamaProvider(config);
             default:
                 throw new Error(`Provider type '${type}' not implemented yet`);
         }
@@ -59,6 +62,15 @@ export class LLMProviderFactory {
                     'gemini-pro-vision'
                 ],
                 supportsVision: true
+            },
+            {
+                id: 'ollama',
+                name: 'Ollama (Local)',
+                description: 'Local LLM runner - privacy-focused',
+                requiresApiKey: false,
+                requiresService: true,
+                models: [], // Will be populated dynamically
+                isLocal: true
             }
         ];
     }
@@ -85,6 +97,15 @@ export class LLMProviderFactory {
                 }
                 if (!config.apiKey.startsWith('AIza')) {
                     throw new Error('Invalid Google AI API key format for Gemini');
+                }
+                break;
+            case 'ollama':
+                // Validate host/port configuration for Ollama
+                if (config.host && !OllamaProvider.isValidHost(config.host)) {
+                    throw new Error('Invalid host configuration for Ollama');
+                }
+                if (config.port && (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535)) {
+                    throw new Error('Invalid port configuration for Ollama - must be between 1 and 65535');
                 }
                 break;
             default:

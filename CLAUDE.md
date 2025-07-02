@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Trenddit Memo is a Chrome extension that enables users to capture, organize, and chat with web content using AI. The extension supports multiple LLM providers (Anthropic Claude, OpenAI GPT, Google Gemini) for content processing and natural language interactions.
+Trenddit Memo is a Chrome extension that enables users to capture, organize, and chat with web content using AI. The extension supports multiple LLM providers (Anthropic Claude, OpenAI GPT, Google Gemini, and Ollama for local processing) for content processing and natural language interactions.
 
 ## Common Development Commands
 
@@ -22,9 +22,9 @@ Trenddit Memo is a Chrome extension that enables users to capture, organize, and
 
 ### Development Notes
 - Only background.js is currently bundled; other files are loaded as ES modules
-- The extension requires an API key from one of the supported providers (Anthropic, OpenAI, or Google)
+- The extension requires an API key from cloud providers (Anthropic, OpenAI, or Google) or a running Ollama service for local processing
 - Uses Chrome Manifest V3 with service worker architecture
-- Multi-provider architecture allows switching between different AI models
+- Multi-provider architecture allows switching between different AI models and local/cloud processing
 
 ## Architecture Overview
 
@@ -216,6 +216,13 @@ The extension uses strict CSP settings defined in manifest.json:
 - API Key Format: `AIza...`
 - Supported Models: Gemini 2.5 Pro, Gemini 2.5 Flash
 - Get API Key: https://aistudio.google.com/app/apikey
+
+**Ollama (Local LLM)**
+- API Key: Not required (local service)
+- Default Configuration: localhost:11434
+- Supported Models: Dynamic (based on installed models)
+- Setup: https://ollama.ai
+- Privacy: All processing stays local on your machine
 
 ### Configuration
 1. Open the extension side panel

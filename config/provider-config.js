@@ -77,10 +77,10 @@ export class ProviderConfigManager {
             return false;
         }
 
-        // Validate model if specified
+        // Validate model if specified (skip for dynamic providers like Ollama)
         if (config.model) {
             const provider = availableProviders.find(p => p.id === config.type);
-            if (provider && !provider.models.includes(config.model)) {
+            if (provider && provider.models.length > 0 && !provider.models.includes(config.model)) {
                 return false;
             }
         }
@@ -164,9 +164,14 @@ export class ProviderConfigManager {
             throw new Error('No configuration found');
         }
 
-        // Validate model for the provider
+        // Validate model for the provider (skip validation for dynamic providers like Ollama)
         const provider = this.getAvailableProviders().find(p => p.id === config.type);
-        if (!provider || !provider.models.includes(model)) {
+        if (!provider) {
+            throw new Error(`Unknown provider ${config.type}`);
+        }
+        
+        // Only validate predefined models for providers that have them
+        if (provider.models.length > 0 && !provider.models.includes(model)) {
             throw new Error(`Invalid model ${model} for provider ${config.type}`);
         }
 
@@ -195,7 +200,7 @@ export class ProviderConfigManager {
     }
 
     // Create default configuration for a provider
-    createDefaultConfig(providerType, apiKey) {
+    createDefaultConfig(providerType, apiKey = null) {
         const providers = this.getAvailableProviders();
         const provider = providers.find(p => p.id === providerType);
         
@@ -203,16 +208,30 @@ export class ProviderConfigManager {
             throw new Error(`Unknown provider: ${providerType}`);
         }
 
-        return {
+        const config = {
             type: providerType,
-            apiKey: apiKey,
-            model: provider.models[0], // Use first model as default
             lastUpdated: Date.now()
         };
+
+        // Add API key only for providers that require it
+        if (provider.requiresApiKey) {
+            config.apiKey = apiKey;
+        }
+
+        // Add model (first available model or default for Ollama)
+        if (provider.models.length > 0) {
+            config.model = provider.models[0];
+        } else if (providerType === 'ollama') {
+            config.model = 'llama2';
+            config.host = 'localhost';
+            config.port = 11434;
+        }
+
+        return config;
     }
 
     // Switch to a different provider
-    async switchProvider(providerType, apiKey) {
+    async switchProvider(providerType, apiKey = null) {
         const config = this.createDefaultConfig(providerType, apiKey);
         return await this.setConfig(config);
     }
@@ -306,12 +325,85 @@ export class ProviderConfigManager {
         try {
             const provider = LLMProviderFactory.createProvider(config.type, config);
             
-            // Initialize provider with API key
-            await provider.initialize(config.apiKey);
+            // Initialize provider (API key for cloud providers, service test for local providers)
+            if (config.type === 'ollama') {
+                await provider.initialize(); // No API key for Ollama
+            } else {
+                await provider.initialize(config.apiKey);
+            }
             
             return { success: true, message: 'Connection successful' };
         } catch (error) {
             return { success: false, message: error.message };
+        }
+    }
+
+    // Ollama-specific methods
+    async getOllamaConfig() {
+        const config = await this.getCurrentConfig();
+        if (!config || config.type !== 'ollama') {
+            return {
+                host: 'localhost',
+                port: 11434,
+                model: '',
+                enabled: false
+            };
+        }
+        return {
+            host: config.host || 'localhost',
+            port: config.port || 11434,
+            model: config.model || '',
+            enabled: true
+        };
+    }
+
+    async saveOllamaConfig(ollamaConfig) {
+        const config = {
+            type: 'ollama',
+            host: ollamaConfig.host || 'localhost',
+            port: ollamaConfig.port || 11434,
+            model: ollamaConfig.model || '',
+            lastUpdated: Date.now()
+        };
+
+        return await this.setConfig(config);
+    }
+
+    async testOllamaConnection(ollamaConfig) {
+        try {
+            const provider = LLMProviderFactory.createProvider('ollama', ollamaConfig);
+            await provider.testConnection();
+            await provider.loadAvailableModels();
+            
+            return {
+                success: true,
+                models: provider.getAvailableModels()
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async getAvailableOllamaModels(ollamaConfig = null) {
+        try {
+            const config = ollamaConfig || await this.getOllamaConfig();
+            const provider = LLMProviderFactory.createProvider('ollama', config);
+            await provider.testConnection();
+            await provider.loadAvailableModels();
+            
+            return {
+                success: true,
+                models: provider.getAvailableModels()
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                models: []
+            };
         }
     }
 }

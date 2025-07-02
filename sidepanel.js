@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function showProviderConfig(providerType, selectedModel = null) {
         // Hide all provider configs
-        const configs = ['anthropicConfig', 'openaiConfig', 'geminiConfig'];
+        const configs = ['anthropicConfig', 'openaiConfig', 'geminiConfig', 'ollamaConfig'];
         configs.forEach(configId => {
             document.getElementById(configId).classList.add('hidden');
         });
@@ -319,7 +319,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const configMap = {
             'anthropic': 'anthropicConfig',
             'openai': 'openaiConfig',
-            'gemini': 'geminiConfig'
+            'gemini': 'geminiConfig',
+            'ollama': 'ollamaConfig'
         };
 
         const configId = configMap[providerType];
@@ -335,24 +336,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             const modelSelect = document.getElementById('modelSelect');
             modelSelect.innerHTML = '';
             
-            provider.models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model;
-                option.textContent = model;
-                modelSelect.appendChild(option);
-            });
+            if (providerType === 'ollama') {
+                // For Ollama, we need to dynamically load models
+                // Show model selection but with special handling
+                document.getElementById('modelSelection').classList.add('hidden');
+                // Ollama model selection is handled in its own UI section
+            } else {
+                // For other providers, use predefined models
+                provider.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
 
-            // Set the selected model if provided
-            if (selectedModel && provider.models.includes(selectedModel)) {
-                modelSelect.value = selectedModel;
+                // Set the selected model if provided
+                if (selectedModel && provider.models.includes(selectedModel)) {
+                    modelSelect.value = selectedModel;
+                }
             }
         }
     }
 
     async function populateProviderFields(config) {
-        const { type, apiKey, accessKeyId, secretAccessKey, region, model, useCrossRegionInference } = config;
+        const { type, apiKey, host, port, model } = config;
         
-        // Populate API key fields
+        // Populate provider-specific fields
         switch (type) {
             case 'anthropic':
                 document.getElementById('anthropicKey').value = apiKey || '';
@@ -362,6 +371,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 break;
             case 'gemini':
                 document.getElementById('geminiKey').value = apiKey || '';
+                break;
+            case 'ollama':
+                document.getElementById('ollamaHost').value = host || 'localhost';
+                document.getElementById('ollamaPort').value = port || 11434;
+                document.getElementById('ollamaModel').value = model || '';
+                // Load available models and check service status
+                await refreshOllamaModels();
                 break;
         }
 
@@ -380,7 +396,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const providerNames = {
                     'anthropic': 'Claude',
                     'openai': 'GPT',
-                    'gemini': 'Gemini'
+                    'gemini': 'Gemini',
+                    'ollama': 'Ollama'
                 };
                 
                 const providerName = providerNames[currentConfig.type] || currentConfig.type;
@@ -468,11 +485,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     async function gatherProviderConfig(providerType) {
-        const model = document.getElementById('modelSelect').value;
         let config = {
-            type: providerType,
-            model: model
+            type: providerType
         };
+
+        // Add model for non-Ollama providers
+        if (providerType !== 'ollama') {
+            const model = document.getElementById('modelSelect').value;
+            config.model = model;
+        }
 
         switch (providerType) {
             case 'anthropic':
@@ -509,6 +530,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return null;
                 }
                 config.apiKey = geminiKey;
+                break;
+
+            case 'ollama':
+                const host = document.getElementById('ollamaHost').value.trim() || 'localhost';
+                const port = parseInt(document.getElementById('ollamaPort').value) || 11434;
+                const ollamaModel = document.getElementById('ollamaModel').value.trim();
+                
+                if (!ollamaModel) {
+                    showStatus('error', 'Please select an Ollama model');
+                    return null;
+                }
+                
+                // Validate port range
+                if (port < 1 || port > 65535) {
+                    showStatus('error', 'Port must be between 1 and 65535');
+                    return null;
+                }
+                
+                config.host = host;
+                config.port = port;
+                config.model = ollamaModel;
                 break;
 
             default:
@@ -1129,5 +1171,84 @@ function displayTagFilteredSavedChats(tagName) {
                 }
             });
         });
+    });
+
+    // Ollama-specific functions
+    async function refreshOllamaModels() {
+        const statusDot = document.getElementById('ollamaStatusDot');
+        const statusText = document.getElementById('ollamaStatusText');
+        const modelSelect = document.getElementById('ollamaModel');
+        const refreshButton = document.getElementById('refreshOllamaModels');
+        
+        // Show loading state
+        statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-yellow-400';
+        statusText.textContent = 'Checking service...';
+        refreshButton.disabled = true;
+        refreshButton.textContent = 'Loading...';
+        
+        try {
+            const host = document.getElementById('ollamaHost').value.trim() || 'localhost';
+            const port = parseInt(document.getElementById('ollamaPort').value) || 11434;
+            
+            const config = { host, port };
+            const result = await providerConfigManager.testOllamaConnection(config);
+            
+            if (result.success) {
+                // Service is available
+                statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-green-400';
+                statusText.textContent = 'Service available';
+                
+                // Update model dropdown
+                modelSelect.innerHTML = '<option value="">Select model...</option>';
+                result.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.name;
+                    option.textContent = `${model.name} (${model.size || 'Unknown size'})`;
+                    modelSelect.appendChild(option);
+                });
+                
+                if (result.models.length === 0) {
+                    statusText.textContent = 'Service available - No models found';
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models available - Download models using "ollama pull"';
+                    option.disabled = true;
+                    modelSelect.appendChild(option);
+                }
+            } else {
+                // Service is not available
+                statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-red-400';
+                statusText.textContent = `Service unavailable: ${result.error}`;
+                modelSelect.innerHTML = '<option value="">Service not available</option>';
+            }
+        } catch (error) {
+            // Error occurred
+            statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-red-400';
+            statusText.textContent = `Error: ${error.message}`;
+            modelSelect.innerHTML = '<option value="">Error loading models</option>';
+        } finally {
+            refreshButton.disabled = false;
+            refreshButton.textContent = 'Refresh Models';
+        }
+    }
+
+    // Add event listeners for Ollama
+    document.addEventListener('DOMContentLoaded', () => {
+        const refreshButton = document.getElementById('refreshOllamaModels');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', refreshOllamaModels);
+        }
+        
+        // Auto-refresh models when host or port changes
+        const hostInput = document.getElementById('ollamaHost');
+        const portInput = document.getElementById('ollamaPort');
+        
+        if (hostInput) {
+            hostInput.addEventListener('blur', refreshOllamaModels);
+        }
+        
+        if (portInput) {
+            portInput.addEventListener('blur', refreshOllamaModels);
+        }
     });
 } 

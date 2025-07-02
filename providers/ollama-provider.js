@@ -1,0 +1,260 @@
+// Ollama Provider for local LLM integration
+import { LLMProvider } from '../llm-provider-api.js';
+
+export class OllamaProvider extends LLMProvider {
+    constructor(config = {}) {
+        super(config);
+        this.host = config.host || 'localhost';
+        this.port = config.port || 11434;
+        this.baseUrl = `http://${this.host}:${this.port}`;
+        this.model = config.model || 'llama2';
+        this.availableModels = [];
+        this.serviceAvailable = false;
+    }
+
+    async initialize(apiKey = null) {
+        // Ollama doesn't use API keys, but we need to test service connectivity
+        try {
+            await this.testConnection();
+            await this.loadAvailableModels();
+            this.initialized = true;
+            return true;
+        } catch (error) {
+            throw new Error(`Failed to connect to Ollama: ${error.message}`);
+        }
+    }
+
+    async testConnection() {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/tags`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Service responded with status ${response.status}`);
+            }
+
+            this.serviceAvailable = true;
+            return true;
+        } catch (error) {
+            this.serviceAvailable = false;
+            throw new Error(`Ollama service not available: ${error.message}`);
+        }
+    }
+
+    async loadAvailableModels() {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/tags`);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch models: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.availableModels = data.models || [];
+            
+            // If no model is selected and models are available, use the first one
+            if (!this.model && this.availableModels.length > 0) {
+                this.model = this.availableModels[0].name;
+            }
+        } catch (error) {
+            console.warn('Failed to load available models:', error.message);
+            this.availableModels = [];
+        }
+    }
+
+    async chat(messages, options = {}) {
+        if (!this.initialized) {
+            throw new Error('Provider not initialized');
+        }
+
+        if (!this.model) {
+            throw new Error('No model selected for Ollama');
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    messages: messages,
+                    stream: false,
+                    options: {
+                        temperature: options.temperature || 0.7,
+                        ...options
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ollama chat failed: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            return {
+                content: data.message?.content || '',
+                usage: {
+                    prompt_tokens: data.prompt_eval_count || 0,
+                    completion_tokens: data.eval_count || 0,
+                    total_tokens: (data.prompt_eval_count || 0) + (data.eval_count || 0)
+                }
+            };
+        } catch (error) {
+            throw new Error(`Ollama chat error: ${error.message}`);
+        }
+    }
+
+    async processMemo(content, options = {}) {
+        if (!this.initialized) {
+            throw new Error('Provider not initialized');
+        }
+
+        const systemPrompt = `You are a helpful AI assistant. Process the following webpage content and extract:
+1. A concise title (max 100 characters)
+2. A brief summary (max 300 characters)
+3. A narrative description (max 500 characters)
+4. Any structured data (if applicable) - return as JSON object
+5. Suggested tags (return array of strings)
+
+Please respond in JSON format with these fields: title, summary, narrative, structured_data, suggested_tags.
+
+Important: Ensure your response is valid JSON that can be parsed.`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: this.sanitizeContent(content) }
+        ];
+
+        try {
+            const response = await this.chat(messages, options);
+            
+            // Parse the JSON response
+            let parsedResponse;
+            try {
+                parsedResponse = JSON.parse(response.content);
+            } catch (parseError) {
+                // Fallback if JSON parsing fails
+                parsedResponse = {
+                    title: 'Processed Content',
+                    summary: 'Content processed by local model',
+                    narrative: response.content.substring(0, 500),
+                    structured_data: {},
+                    suggested_tags: ['local']
+                };
+            }
+
+            return {
+                title: parsedResponse.title || 'Untitled',
+                summary: parsedResponse.summary || 'No summary available',
+                narrative: parsedResponse.narrative || 'No narrative available',
+                structuredData: parsedResponse.structured_data || {},
+                selectedTag: parsedResponse.suggested_tags?.[0] || 'general'
+            };
+        } catch (error) {
+            throw new Error(`Memo processing failed: ${error.message}`);
+        }
+    }
+
+    calculateTokens(text) {
+        // Rough token estimate for Ollama models (similar to other providers)
+        // This is an approximation; actual token counting varies by model
+        return Math.ceil(text.length / 4);
+    }
+
+    getAvailableModels() {
+        return this.availableModels;
+    }
+
+    // Additional Ollama-specific methods
+    async getModelInfo(modelName = null) {
+        const model = modelName || this.model;
+        if (!model) {
+            throw new Error('No model specified');
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/api/show`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: model })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to get model info: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            throw new Error(`Model info error: ${error.message}`);
+        }
+    }
+
+    async pullModel(modelName) {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/pull`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: modelName })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to pull model: ${response.status}`);
+            }
+
+            // Note: This is a streaming endpoint, in a real implementation
+            // you might want to handle the stream for progress updates
+            return await response.json();
+        } catch (error) {
+            throw new Error(`Model pull error: ${error.message}`);
+        }
+    }
+
+    // Validate configuration
+    static validateConfig(config) {
+        if (config.host && !this.isValidHost(config.host)) {
+            throw new Error('Invalid host configuration');
+        }
+
+        if (config.port) {
+            const port = parseInt(config.port);
+            if (!Number.isInteger(port) || port < 1 || port > 65535) {
+                throw new Error('Invalid port configuration - must be between 1 and 65535');
+            }
+        }
+
+        return true;
+    }
+
+    static isValidHost(host) {
+        // Simple validation for localhost, IP addresses, or hostnames
+        const localhostRegex = /^(localhost|127\.0\.0\.1|::1)$/;
+        const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+        const hostnameRegex = /^[a-zA-Z0-9.-]+$/;
+        
+        return localhostRegex.test(host) || ipRegex.test(host) || hostnameRegex.test(host);
+    }
+
+    // Get service status
+    getServiceStatus() {
+        return {
+            available: this.serviceAvailable,
+            initialized: this.initialized,
+            host: this.host,
+            port: this.port,
+            baseUrl: this.baseUrl,
+            model: this.model,
+            modelsCount: this.availableModels.length
+        };
+    }
+}

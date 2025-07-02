@@ -470,6 +470,81 @@
                         </div>
                     </div>
 
+                    <!-- Ollama Configuration -->
+                    <div id="ollamaConfig" class="hidden space-y-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-blue-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <h4 class="text-sm font-medium text-blue-800">Ollama (Local LLM)</h4>
+                            </div>
+                            <p class="text-xs text-blue-700">Run AI models locally on your machine for privacy and offline use.</p>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label for="ollamaHost" class="block text-sm font-medium text-gray-700">
+                                Host
+                            </label>
+                            <input type="text" 
+                                   id="ollamaHost" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                                   placeholder="localhost" 
+                                   value="localhost">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label for="ollamaPort" class="block text-sm font-medium text-gray-700">
+                                Port
+                            </label>
+                            <input type="number" 
+                                   id="ollamaPort" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                                   placeholder="11434" 
+                                   value="11434"
+                                   min="1" 
+                                   max="65535">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="ollamaModel" class="block text-sm font-medium text-gray-700">
+                                    Model
+                                </label>
+                                <button id="refreshOllamaModels" 
+                                        type="button" 
+                                        class="text-xs text-blue-600 hover:text-blue-700 focus:outline-none">
+                                    Refresh Models
+                                </button>
+                            </div>
+                            <select id="ollamaModel" 
+                                    class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Select model...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="ollama-status">
+                            <div id="ollamaServiceStatus" class="flex items-center text-xs">
+                                <div class="w-2 h-2 rounded-full mr-2" id="ollamaStatusDot"></div>
+                                <span id="ollamaStatusText">Checking service...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="ollama-help">
+                            <details class="text-xs">
+                                <summary class="cursor-pointer text-blue-600 hover:text-blue-700 select-none">
+                                    Need help setting up Ollama?
+                                </summary>
+                                <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 space-y-1">
+                                    <p>1. Install Ollama from <a href="https://ollama.ai" target="_blank" class="text-blue-600 hover:underline">https://ollama.ai</a></p>
+                                    <p>2. Start the Ollama service</p>
+                                    <p>3. Download a model: <code class="bg-gray-200 px-1 rounded">ollama pull llama2</code></p>
+                                    <p>4. Refresh models in this settings panel</p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
                     <!-- Model Selection -->
                     <div id="modelSelection" class="hidden space-y-2">
                         <label for="modelSelect" class="block text-sm font-medium text-gray-700">
