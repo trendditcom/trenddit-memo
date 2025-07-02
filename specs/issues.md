@@ -1,5 +1,16 @@
 # Issues
 
+[ ] Research online if the solution for making Ollama work with our extension only works with `ollama serve` in terminal or is there a way for it to work when Ollama is run from spotlight.
+
+[ ] Check if despite persistance of model selection and provider keys, when switching between screens why the persisted settings not restored.
+
+[ ] When chatting with Ollama model I can see the Ollama server logs the call correctly however I get response as "I apologize, but I encountered an error. Please try again". Ollama server logs: [GIN] 2025/07/02 - 16:14:10 | 200 |  7.014360958s |       127.0.0.1 | POST     "/api/chat"
+
+
+[x] Fixed. Updated Ollama provider's `processMemo` method to match Anthropic's approach exactly - now uses the same system message format, includes available tags for better tag selection, follows the same JSON response format, and uses the same JSON parsing logic. The memo structure and quality are now consistent between providers, with differences only due to underlying LLM capabilities.
+
+[x] Fixed. Made provider configuration manager initialization more robust by initializing it immediately on import rather than waiting for full extension initialization. Added defensive checks throughout the codebase to ensure `providerConfigManager` is always available before use. The configuration now persists properly across extension reloads using the same Chrome storage mechanism as memos, with automatic backup to sync storage and recovery capabilities.
+
 [x] Fixed. The issue was using OLLAMA_ORIGIN instead of OLLAMA_ORIGINS (note the plural). Updated error messages in Ollama provider to clearly indicate the correct environment variable name (OLLAMA_ORIGINS), provide proper setup instructions including stopping all processes first, and reference the detailed setup documentation in docs/ollama-setup.md. Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Chrome extension requests are blocked.
 
 [x] Setup export OLLAMA_ORIGIN="chrome-extension://*" but still getting the same error: Error processing memo: Error: Memo processing failed: Ollama chat error: Ollama CORS Error (403): Chrome extension requests are blocked... Research online for a solution.

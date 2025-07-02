@@ -45,8 +45,8 @@ const saveChatButton = document.getElementById('saveChatButton');
 // Add current filter state
 let currentTagFilter = null;
 
-// Initialize provider configuration manager
-let providerConfigManager;
+// Initialize provider configuration manager immediately
+let providerConfigManager = new ProviderConfigManager();
 
 // Ollama-specific functions
 async function refreshOllamaModels() {
@@ -100,6 +100,10 @@ async function refreshOllamaModels() {
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error('Connection test timed out after 15 seconds')), 15000);
         });
+        
+        if (!providerConfigManager) {
+            providerConfigManager = new ProviderConfigManager();
+        }
         
         const result = await Promise.race([
             providerConfigManager.testOllamaConnection(config),
@@ -422,6 +426,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!config) return;
 
             // Save configuration
+            if (!providerConfigManager) {
+                providerConfigManager = new ProviderConfigManager();
+            }
             await providerConfigManager.setConfig(config);
             
             // Update background script with new configuration
@@ -454,6 +461,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             showStatus('info', 'Testing connection...');
             
+            if (!providerConfigManager) {
+                providerConfigManager = new ProviderConfigManager();
+            }
             const result = await providerConfigManager.testProviderConnection(config);
             if (result.success) {
                 showStatus('success', 'Connection test successful!');
@@ -596,6 +606,11 @@ async function initializeProviderSettings() {
             providerSelect.appendChild(option);
         });
 
+        // Ensure provider config manager is ready
+        if (!providerConfigManager) {
+            providerConfigManager = new ProviderConfigManager();
+        }
+        
         // Check for legacy configuration and migrate if needed
         const migrated = await providerConfigManager.migrateFromLegacy();
 
@@ -723,6 +738,11 @@ async function populateProviderFields(config) {
 // Update provider indicator in HTML title and UI
 async function updateProviderIndicator() {
     try {
+        // Ensure provider config manager is ready
+        if (!providerConfigManager) {
+            providerConfigManager = new ProviderConfigManager();
+        }
+        
         const currentConfig = await providerConfigManager.getCurrentConfig();
         const baseTitle = 'Trenddit Memo';
         const providerIndicatorElement = document.getElementById('providerIndicator');
@@ -766,6 +786,12 @@ async function updateProviderIndicator() {
 // Check if any provider is configured
 async function checkProviderConfiguration() {
     try {
+        // Ensure provider config manager is initialized
+        if (!providerConfigManager) {
+            console.warn('Provider config manager not initialized, creating new instance');
+            providerConfigManager = new ProviderConfigManager();
+        }
+        
         const isConfigured = await providerConfigManager.isConfigured();
         if (!isConfigured) {
             showStatus('error', 'Please configure an AI provider in Settings first');
@@ -811,9 +837,6 @@ async function initializeExtension() {
             }
         }
 
-        // Initialize provider configuration manager
-        providerConfigManager = new ProviderConfigManager();
-        
         // Initialize provider settings
         await initializeProviderSettings();
 

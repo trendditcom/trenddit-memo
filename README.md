@@ -1,85 +1,31 @@
-# Trenddit Memo
+# Anvam AI Memo
 
 <div align="center">
   
-  *An evolving Chrome extension that bridges web content with conversational AI*
+  *Transform your browsing into intelligent knowledge with AI-powered content capture and conversation*
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+  [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://developer.chrome.com/docs/extensions/)
   
-  Built with Anthropic Claude • OpenAI GPT • Google Gemini
+  **Powered by Multiple AI Providers**  
+  Anthropic Claude • OpenAI GPT • Google Gemini • Ollama (Local)
   
-  [Quick Start](#quick-start) • [Features](#features) • [Development](#development) • [Contributing](#contributing)
+  [Quick Start](#-quick-start) • [Features](#-features) • [User Guide](#-user-guide) • [Roadmap](#-roadmap)
   
 </div>
 
 ---
 
-## About This Project
+## 🎯 What is Anvam AI Memo?
 
-Trenddit Memo began as an exploration into making web content more conversational. Through rapid iteration, we've developed a Chrome extension that captures web content and enables natural language interactions through multiple AI providers.
+Anvam AI Memo is a powerful Chrome extension that revolutionizes how you interact with web content. Capture any content from websites, automatically organize it with AI, and have intelligent conversations with your saved knowledge base.
 
-Our approach has been to build incrementally, learning from each implementation cycle. What started as a simple content capture tool has grown into a multi-provider AI interface, though we recognize there's much more to explore.
-
-### Current Capabilities
-
-- **Multi-Provider Integration**: Working implementations for Anthropic Claude, OpenAI GPT, and Google Gemini
-- **Content Conversations**: Early success in making saved web pages queryable through natural language
-- **Organizational Systems**: Developing tag-based categorization with growing icon library
-- **Source Attribution**: Connecting AI responses back to original content
-- **Local-First Architecture**: Prioritizing user data sovereignty
-
----
-
-## 📸 See It In Action
-
-<div align="center">
-  
-  ### Capture → Process → Chat
-  
-  ![Trenddit Memo Demo](images/web-memo-workflow.png)
-  
-</div>
-
-### Real-World Use Cases
-
-<table>
-<tr>
-<td width="50%">
-
-**📈 Investment Research**
-- Capture earnings reports and analysis
-- Chat with your research: "What were the key risks mentioned?"
-- AI cites specific memos in responses
-
-</td>
-<td width="50%">
-
-**🛒 Smart Shopping**
-- Save product reviews and comparisons
-- Ask: "Which laptop had the best battery life?"
-- Get AI-powered purchase recommendations
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**📚 Learning & Development**
-- Capture tutorials and documentation
-- Query: "How do I implement authentication?"
-- AI synthesizes information from multiple sources
-
-</td>
-<td width="50%">
-
-**📰 News & Content Curation**
-- Save articles across different topics
-- Ask: "What are the main themes this week?"
-- Get intelligent summaries with citations
-
-</td>
-</tr>
-</table>
+**Key Benefits:**
+- 🧠 **AI-Powered Processing**: Multiple LLM providers extract key insights automatically
+- 🏷️ **Smart Organization**: AI suggests tags and categories for effortless organization  
+- 💬 **Conversational Interface**: Chat with your saved content using natural language
+- 🔒 **Privacy-First**: Local storage with optional sync, your data stays under your control
+- 🌍 **Multi-Provider Support**: Choose from 4 AI providers including local options
 
 ---
 
@@ -89,13 +35,11 @@ Our approach has been to build incrementally, learning from each implementation 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/trenddit-memo.git
-cd trenddit-memo
+git clone https://github.com/yourusername/anvam-ai-memo.git
+cd anvam-ai-memo
 
-# Install dependencies
+# Install dependencies and build
 npm install
-
-# Build the extension
 npm run build
 ```
 
@@ -103,138 +47,164 @@ npm run build
 
 1. Open `chrome://extensions/`
 2. Enable "Developer mode" (top right)
-3. Click "Load unpacked"
-4. Select the `trenddit-memo` directory
+3. Click "Load unpacked" and select the project directory
+4. Pin the extension to your toolbar
 
 ### 3️⃣ Choose Your AI Provider
 
-<table>
-<tr>
-<th>Provider</th>
-<th>Models Available</th>
-<th>Best For</th>
-<th>Get API Key</th>
-</tr>
-<tr>
-<td>🤖 <b>Anthropic Claude</b></td>
-<td>Claude Opus 4, Sonnet 4, Sonnet 3.7, Sonnet 3.5v2, Haiku 3.5</td>
-<td>Complex analysis, reasoning, coding</td>
-<td><a href="https://console.anthropic.com/">console.anthropic.com</a></td>
-</tr>
-<tr>
-<td>🧠 <b>OpenAI GPT</b></td>
-<td>GPT-4o-mini, GPT-4o, GPT-4.1, GPT-4.1-mini</td>
-<td>Creative writing, general tasks</td>
-<td><a href="https://platform.openai.com/api-keys">platform.openai.com</a></td>
-</tr>
-<tr>
-<td>🎯 <b>Google Gemini</b></td>
-<td>Gemini 2.5 Pro, Gemini 2.5 Flash</td>
-<td>Multimodal content, Google ecosystem</td>
-<td><a href="https://aistudio.google.com/app/apikey">aistudio.google.com</a></td>
-</tr>
-</table>
+Select from 4 powerful AI providers:
+
+| Provider | Best For | Privacy | Cost | Setup |
+|----------|----------|---------|------|-------|
+| **🤖 Anthropic Claude** | Complex analysis, reasoning | Cloud | Paid API | [Get API Key](https://console.anthropic.com/) |
+| **🧠 OpenAI GPT** | Creative tasks, general use | Cloud | Paid API | [Get API Key](https://platform.openai.com/api-keys) |
+| **🎯 Google Gemini** | Fast responses, multimodal | Cloud | Paid API | [Get API Key](https://aistudio.google.com/app/apikey) |
+| **🏠 Ollama (Local)** | Privacy, offline use | Local | Free | [Install Ollama](https://ollama.ai) |
 
 ### 4️⃣ Start Capturing!
 
-1. Click the Trenddit icon to open the side panel
+1. Click the Anvam AI Memo icon to open the side panel
 2. Navigate to any webpage
 3. Click "Capture Content" and select what to save
-4. Watch as AI processes and organizes your content
+4. Watch AI automatically process and organize your content
+5. Start chatting with your knowledge base!
 
 ---
 
-## Features
+## ✨ Features
 
-### Content Capture
-We've refined the capture experience through multiple iterations. The system now supports visual element selection across websites, with ongoing improvements to extraction accuracy and cross-site compatibility.
+### 🎯 Intelligent Content Capture
+- **Visual Selection**: Click any element on a webpage to capture it
+- **Smart Processing**: AI extracts titles, summaries, and key insights
+- **Metadata Preservation**: Saves source URLs, timestamps, and favicons
+- **Cross-Site Compatibility**: Works across all websites
 
-### Organization & Retrieval
-Our tagging system has evolved from basic categorization to include custom colors, icons, and hierarchical structures. The AI-assisted categorization continues to improve as we refine the underlying models.
+### 🏷️ AI-Powered Organization  
+- **Smart Tagging**: AI suggests relevant tags automatically
+- **70+ Icons**: Extensive icon library for visual organization
+- **Custom Categories**: Create your own tags with colors and icons
+- **Hierarchical Structure**: Organize content into projects and themes
 
-### Conversational Interface
-The chat functionality represents our most significant recent progress. We've successfully integrated three major AI providers, each bringing unique strengths to content interaction and analysis.
+### 💬 Conversational AI Interface
+- **Context-Aware Chat**: Ask questions about your saved content
+- **Multi-Provider Support**: Choose the best AI for each task
+- **Source Citations**: Responses include links to original content
+- **Saved Conversations**: Keep important discussions for later
 
-### Data Architecture
-We've prioritized user data sovereignty with local-first storage, while developing optional sync capabilities. The export and backup systems ensure users maintain full control over their captured knowledge.
+### 🛡️ Privacy & Security
+- **Local-First Storage**: All content stored on your device
+- **Optional Sync**: Chrome's secure sync for backup only
+- **API Key Security**: Encrypted storage, never transmitted
+- **No Tracking**: Zero analytics or data collection
+
+### 🔧 Advanced Capabilities
+- **Multi-LLM Support**: Switch between 4 AI providers seamlessly
+- **Token Optimization**: Smart processing to stay within limits
+- **Export Functionality**: Copy or download your content
+- **Offline Support**: Local AI option with Ollama
 
 ---
 
 ## 📖 User Guide
 
-### Basic Workflow
+### Getting Started
 
-<table>
-<tr>
-<td width="25%" align="center">
-  
-  **1. Capture**
-  
-  Click any element on a webpage to save it
-  
-</td>
-<td width="25%" align="center">
-  
-  **2. Process**
-  
-  AI extracts key information and suggests tags
-  
-</td>
-<td width="25%" align="center">
-  
-  **3. Organize**
-  
-  Review and adjust tags as needed
-  
-</td>
-<td width="25%" align="center">
-  
-  **4. Chat**
-  
-  Have conversations with your saved content
-  
-</td>
-</tr>
-</table>
+#### Initial Setup
+1. **Install** the extension following the [Quick Start](#-quick-start) guide
+2. **Configure** your preferred AI provider in Settings
+3. **Test Connection** to ensure everything works
+4. **Start Capturing** content from any website
+
+#### Choosing an AI Provider
+
+**For Privacy & Cost Control:**
+- Choose **Ollama** for completely local processing
+- No API costs, data never leaves your machine
+- Requires installing Ollama locally
+
+**For Best Performance:**
+- **Anthropic Claude** for complex analysis and reasoning
+- **OpenAI GPT** for creative tasks and general use  
+- **Google Gemini** for fast responses and multimodal content
+
+### Content Capture Workflow
+
+<div align="center">
+
+**1. Capture** → **2. Process** → **3. Organize** → **4. Chat**
+
+</div>
+
+#### Step 1: Capture Content
+1. Click the extension icon to open the side panel
+2. Navigate to any webpage with interesting content
+3. Click "Capture Content" button
+4. Visual highlighting will activate - click any element to capture
+5. Content is immediately saved and queued for processing
+
+#### Step 2: AI Processing  
+1. AI automatically analyzes your captured content
+2. Extracts title, summary, and key insights
+3. Suggests relevant tags for organization
+4. Processes structured data (prices, ratings, etc.)
+
+#### Step 3: Organization
+1. Review AI-suggested tags or create custom ones
+2. Assign colors and icons to tags for visual organization
+3. Use the tag system to group related content
+4. Filter and browse content by tags
+
+#### Step 4: Conversational Chat
+1. Select tags to define conversation context
+2. Ask questions about your saved content
+3. AI provides answers with source citations
+4. Save important conversations for future reference
 
 ### Advanced Features
 
 <details>
 <summary><b>🔧 Provider Configuration</b></summary>
 
-Each AI provider has specific settings you can customize:
-
 **Anthropic Claude**
-- Models: Claude Opus 4, Sonnet 4, Sonnet 3.7, Sonnet 3.5v2, Haiku 3.5
-- Best for: Deep analysis, technical content, complex reasoning
+- **Models**: Claude Opus 4, Sonnet 4, Sonnet 3.7, Sonnet 3.5v2, Haiku 3.5
+- **Best for**: Deep analysis, technical content, complex reasoning
+- **API Key**: Starts with `sk-ant-`
 
-**OpenAI GPT**
-- Models: GPT-4o-mini, GPT-4o, GPT-4.1, GPT-4.1-mini
-- Best for: Creative tasks, code generation, general productivity
+**OpenAI GPT**  
+- **Models**: GPT-4o-mini, GPT-4o, GPT-4.1, GPT-4.1-mini
+- **Best for**: Creative tasks, code generation, general productivity
+- **API Key**: Starts with `sk-`
 
 **Google Gemini**
-- Models: Gemini 2.5 Pro, Gemini 2.5 Flash
-- Best for: Multimodal content, fast responses, Google ecosystem integration
+- **Models**: Gemini 2.5 Pro, Gemini 2.5 Flash  
+- **Best for**: Multimodal content, fast responses, Google ecosystem
+- **API Key**: Starts with `AIza`
+
+**Ollama (Local)**
+- **Models**: Llama 2, Mistral, CodeLlama, and more
+- **Best for**: Privacy, offline use, no API costs
+- **Setup**: Install from [ollama.ai](https://ollama.ai)
 
 </details>
 
 <details>
 <summary><b>🏷️ Tag Management</b></summary>
 
-**Predefined Categories Include:**
-- 📚 Learning & Education
+**Predefined Categories:**
+- 📚 Learning & Education  
 - 💼 Work & Productivity
 - 🛒 Shopping & Reviews
 - 📈 Finance & Investment
 - 🎮 Entertainment & Gaming
-- 🍳 Food & Recipes
+- 🍳 Food & Recipes  
 - ✈️ Travel & Places
-- And 60+ more...
+- And 60+ more categories...
 
 **Custom Tags:**
 1. Click "Manage Tags" in settings
 2. Create new tag with name, color, and icon
 3. Tags automatically appear in capture workflow
+4. Organize tags hierarchically
 
 </details>
 
@@ -245,148 +215,188 @@ Each AI provider has specific settings you can customize:
 - "Summarize all my research on [topic]"
 - "What are the pros and cons mentioned in my saved reviews?"
 - "Find information about [specific detail] in my memos"
+- "Compare the different solutions I've saved"
 
 **Using Tag Filters:**
-1. Select relevant tags before chatting
-2. AI will only reference filtered memos
+1. Select relevant tags before starting a chat
+2. AI will only reference filtered content
 3. More focused context = better responses
+4. Switch contexts by changing tag selection
+
+**Advanced Features:**
+- Toggle between original source and processed content
+- Save important conversations
+- Export chat history
+- View token usage and costs
 
 </details>
 
+### Real-World Use Cases
+
+| Use Case | Workflow | Benefits |
+|----------|----------|----------|
+| **📈 Investment Research** | Capture earnings reports → Tag by company → Chat for insights | AI synthesizes data across multiple sources |
+| **🛒 Smart Shopping** | Save product reviews → Tag by category → Ask for recommendations | Compare products intelligently |
+| **📚 Learning & Development** | Capture tutorials → Tag by skill → Chat for explanations | Personal AI tutor with your curated content |
+| **📰 News & Content Curation** | Save articles → Tag by topic → Get trend summaries | Stay informed with AI analysis |
+
 ---
 
-## 🛠️ Technical Details
+## 🏗️ Technical Architecture
 
-### Architecture Overview
+### Modern Chrome Extension
+- **Manifest V3**: Latest Chrome extension architecture
+- **Service Worker**: Efficient background processing
+- **ES Modules**: Clean, maintainable code structure
+- **CSP Compliant**: Secure content handling
 
+### AI Provider Architecture
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Content Script │────▶│  Background  │────▶│ AI Provider │
-│  (Capture UI)   │     │   Service    │     │   (4 LLMs)  │
+│  Browser UI     │────▶│ Provider     │────▶│ AI Provider │
+│  (Side Panel)   │     │ Factory      │     │ (Claude/etc)│  
 └─────────────────┘     └──────────────┘     └─────────────┘
          │                      │                     │
          ▼                      ▼                     ▼
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Side Panel    │     │   Storage    │     │   API Keys  │
-│  (Main UI)      │     │ (Local/Sync) │     │  (Secure)   │
+│  Local Storage  │     │  Config      │     │   Chat &    │
+│  (Memos/Tags)   │     │ Management   │     │ Processing  │
 └─────────────────┘     └──────────────┘     └─────────────┘
 ```
 
 ### Key Technologies
-- **Chrome Manifest V3**: Modern service worker architecture
-- **ES Modules**: Clean, maintainable code structure
-- **Provider Factory Pattern**: Extensible multi-LLM integration
+- **Multi-LLM Integration**: Unified interface for 4 AI providers
+- **Browser-Compatible APIs**: Native fetch for all providers  
 - **Repository Pattern**: Abstracted data access layer
-- **Browser-Compatible APIs**: Native fetch for all providers
-- **CSP Compliance**: Secure content handling
+- **Provider Factory**: Extensible architecture for adding new AI providers
+- **Local-First Storage**: Chrome storage APIs with sync backup
 
 ---
 
-## Development Journey
+## 🛣️ Roadmap
 
-### Foundation Phase (Recently Completed)
-Our initial focus was establishing stable multi-provider AI integration. This phase taught us valuable lessons about browser extension architecture and API compatibility across different providers.
+### ✅ Recently Completed
 
-**Key Achievements:**
-- Successfully integrated three major AI providers with unified interface
-- Developed extensible provider factory pattern for future additions
-- Implemented local-first storage with privacy-focused design
-- Created visual content capture system through iterative refinement
+**Multi-LLM Integration (2024)**
+- ✅ Anthropic Claude provider with latest models
+- ✅ OpenAI GPT integration with GPT-4 family
+- ✅ Google Gemini support with Pro and Flash models
+- ✅ Unified provider interface with seamless switching
+- ✅ Provider-specific model selection and configuration
 
-### Current Sprint (Active Development)
-We're expanding the intelligence layer while refining existing capabilities based on user feedback and technical learnings.
+**Local AI Integration (2024)**  
+- ✅ Ollama provider for local LLM processing
+- ✅ Privacy-focused local AI without cloud dependencies
+- ✅ Model discovery and management
+- ✅ Offline processing capabilities
 
-**In Progress:**
-- Semantic search implementation for content discovery
-- Enhanced content analysis with sentiment and topic modeling
-- Local LLM integration experiments (Ollama)
-- Smart summary generation for daily/weekly content digests
+**Core Platform (2024)**
+- ✅ Chrome Manifest V3 architecture
+- ✅ Visual content capture system
+- ✅ Tag-based organization with 70+ icons
+- ✅ Conversational chat interface
+- ✅ Local-first storage with backup
 
-### Next Horizon (Early 2025)
-Our roadmap continues to evolve based on community input and technical possibilities we discover along the way.
+### 🚧 In Development (2025 Q1)
 
-**Planned Explorations:**
-- Rich media processing (video transcripts, PDFs, audio content)
-- Social media content integration experiments
-- Collaborative features for shared knowledge bases
-- Advanced workflow automation
+**Enhanced Content Analysis**
+- 🔄 Sentiment analysis for captured content
+- 🔄 Topic modeling and content clustering  
+- 🔄 Smart content summarization and digests
+- 🔄 Semantic search within saved content
 
-*We remain committed to rapid iteration while acknowledging that each new capability brings its own challenges and learning opportunities.*
+**Rich Media Support**
+- 🔄 PDF processing and analysis
+- 🔄 Image content extraction and description
+- 🔄 Video transcript capture and processing
+- 🔄 Audio content analysis and summarization
+
+### 🎯 Coming Soon (2025 Q2-Q3)
+
+**Extended Content Sources**
+- 📋 YouTube video and podcast transcript capture
+- 📋 Twitter/X thread processing and organization
+- 📋 Social media content aggregation
+- 📋 Email and document import capabilities
+
+**Advanced Workflow Automation**  
+- 📋 AI agents for task execution based on content
+- 📋 Automated content categorization and filing
+- 📋 Smart notifications and content recommendations
+- 📋 Workflow templates for common use cases
+
+**Collaboration & Sharing**
+- 📋 Team workspaces for shared knowledge bases
+- 📋 Content sharing and collaboration features
+- 📋 Real-time sync across team members
+- 📋 Permission management and access control
+
+### 🌟 Future Horizons (2025 Q4+)
+
+**System Integration**
+- 📋 Calendar integration for content-based scheduling
+- 📋 Task management system integration
+- 📋 CRM and productivity tool connections
+- 📋 API for third-party integrations
+
+**Advanced AI Capabilities**
+- 📋 Multi-modal AI processing (text, image, audio)
+- 📋 Advanced reasoning and decision support
+- 📋 Predictive content recommendations
+- 📋 Custom AI model fine-tuning
+
+**Enterprise Features**
+- 📋 SSO and enterprise authentication
+- 📋 Advanced security and compliance features
+- 📋 Team analytics and usage insights
+- 📋 Custom deployment options
 
 ---
 
-## Technical Architecture
+## 🔧 Development
 
-### Design Philosophy
-Our architecture emerged from practical constraints and security requirements inherent to browser extensions. Each design decision balances extensibility with performance, leading to patterns that support rapid iteration.
+### Prerequisites
+- Node.js 16+
+- Chrome Browser (for testing)
+- AI Provider API Keys (optional, for testing)
 
-### Provider Abstraction
-The multi-LLM integration relies on a unified interface that abstracts provider-specific implementations:
-
-```javascript
-// Unified provider interface
-export class LLMProvider {
-    async initialize(apiKey) { /* Provider initialization */ }
-    async chat(messages, options) { /* Chat implementation */ }
-    async processMemo(content, options) { /* Content processing */ }
-    calculateTokens(text) { /* Token calculation */ }
-}
-```
-
-This abstraction enables provider switching without architectural changes, though each integration revealed unique considerations for token handling, rate limiting, and response formatting.
-
-### Processing Flow
-Content moves through a pipeline designed for reliability and user feedback:
-
-**Capture** → **Extract** → **Process** → **Store** → **Query**
-
-Each stage includes error handling and progress indication, learning from earlier versions where silent failures confused users.
-
-### Security Approach
-Browser extension security constraints shaped our implementation:
-
-- All provider communication uses native browser APIs
-- API keys remain isolated in secure Chrome storage
-- Content sanitization prevents XSS vulnerabilities
-- CSP compliance ensures script integrity
-
-### Performance Considerations
-We've optimized for perceived performance rather than raw speed:
-
-- Lazy provider loading reduces initial startup time
-- Token-aware processing prevents API quota issues
-- Local-first storage eliminates network dependencies for core functionality
-- Progressive enhancement ensures functionality on slower devices
-
----
-
-## 🤝 Contributing
-
-We love contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Quick Contribution Guide
-
+### Local Development
 ```bash
-# Fork and clone
-git clone https://github.com/yourusername/trenddit-memo.git
-
-# Create feature branch
-git checkout -b feature/amazing-feature
-
-# Make changes and test
+# Clone and setup
+git clone https://github.com/yourusername/anvam-ai-memo.git
+cd anvam-ai-memo
 npm install
+
+# Build the extension  
 npm run build
 
-# Commit and push
-git commit -m "Add amazing feature"
-git push origin feature/amazing-feature
+# Run tests
+npm test
+
+# Development build with watch
+npm run build --watch
 ```
 
-### Development Tips
-- Follow existing code patterns
-- Add tests for new features
-- Update documentation
-- Check `specs/` folder for detailed requirements
+### Testing
+```bash
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:syntax      # Syntax validation
+npm run test:simple     # Core functionality tests  
+npm run test:browser    # Browser-based tests
+```
+
+### Contributing
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+**Development Process:**
+1. Fork the repository
+2. Create a feature branch
+3. Make changes and add tests
+4. Ensure all tests pass
+5. Submit a pull request
 
 ---
 
@@ -394,19 +404,34 @@ git push origin feature/amazing-feature
 
 ### Performance Metrics
 - ⚡ **Content Capture**: <2 seconds average processing time
-- 📦 **Extension Size**: <2MB with all providers
+- 📦 **Extension Size**: <2MB with all providers included
 - 🔋 **Memory Usage**: Minimal background impact (~10MB)
 - 🚀 **AI Response Time**: 2-10 seconds (provider dependent)
-- 🏗️ **Build Time**: <5 seconds with ESBuild
-- 📊 **Token Limit**: 4096 tokens per memo for optimal processing
+- 📊 **Token Optimization**: 4096 tokens max per memo for efficiency
 
 ### Privacy & Security
-- 🔒 **API Keys**: Encrypted local storage, never transmitted
-- 📵 **No Tracking**: Zero analytics or data collection
-- 💾 **Local-First**: All content stored on your device
-- 🔐 **Optional Sync**: Chrome's secure sync for metadata only
-- 🛡️ **CSP Protection**: Content Security Policy enforcement
-- 🚫 **No External Dependencies**: All providers use native browser APIs
+- 🔒 **Local-First**: All content stored on your device by default
+- 🔐 **API Key Security**: Encrypted storage, never transmitted or logged
+- 📵 **Zero Tracking**: No analytics, telemetry, or user behavior tracking
+- 🛡️ **CSP Protection**: Content Security Policy prevents malicious scripts
+- 🔄 **Optional Sync**: Chrome's encrypted sync for metadata backup only
+- 🏠 **Local AI Option**: Ollama keeps everything on your machine
+
+---
+
+## 🤝 Support & Community
+
+### Getting Help
+- 📖 **Documentation**: Comprehensive guides in this README
+- 🐛 **Issues**: [Report bugs or request features](https://github.com/yourusername/anvam-ai-memo/issues)
+- 💬 **Discussions**: [Community discussions and questions](https://github.com/yourusername/anvam-ai-memo/discussions)
+- 📧 **Direct Support**: [Contact us directly](mailto:support@anvam.ai)
+
+### Community
+- ⭐ **Star** this repository if you find it useful
+- 🍴 **Fork** to contribute or customize for your needs
+- 📢 **Share** with others who might benefit
+- 🤝 **Contribute** to make it even better
 
 ---
 
@@ -416,20 +441,22 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-This project builds upon the work of many others. The Chrome Extensions platform provided the foundation, while the AI provider teams created the APIs that make content conversations possible.
-
-The open source community continues to inspire our development approach, and early users have provided invaluable feedback that shapes each iteration.
-
-We remain grateful for the opportunity to explore these technologies and contribute to the broader conversation about AI-assisted knowledge management.
+This project builds upon the incredible work of:
+- **Chrome Extensions Platform** - For providing the foundation
+- **AI Provider Teams** - Anthropic, OpenAI, Google, and Ollama for their APIs
+- **Open Source Community** - For inspiration and best practices
+- **Early Users** - For feedback that shapes our direction
 
 ---
 
 <div align="center">
   
-  *Your feedback shapes our direction*
+  **Ready to transform your browsing experience?**
   
-  [Issues](https://github.com/yourusername/trenddit-memo/issues) • [Discussions](https://github.com/yourusername/trenddit-memo/discussions) • [Contributing](CONTRIBUTING.md)
+  [Get Started](#-quick-start) • [View Features](#-features) • [See Roadmap](#-roadmap)
+  
+  *Your intelligent web companion powered by AI*
   
 </div>

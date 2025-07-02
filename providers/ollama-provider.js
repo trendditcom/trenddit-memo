@@ -209,58 +209,51 @@ export class OllamaProvider extends LLMProvider {
             throw new Error('Provider not initialized');
         }
 
-        const systemPrompt = `You are a helpful AI assistant. Process the following webpage content and extract:
-1. A concise title (max 100 characters)
-2. A brief summary (max 300 characters)
-3. A narrative description (max 500 characters)
-4. Any structured data (if applicable) - return as JSON object
-5. Suggested tags (return array of strings)
+        const { url, tags } = options;
+        
+        const systemMessage = `You are an AI assistant that processes web content into structured memos. 
+        Given HTML content and a URL, you will:
+        1. Extract and summarize the key information
+        2. Create a narrative version
+        3. Generate structured data
+        4. Select the most appropriate tag from the available tags
+        
+        Available tags: ${tags ? tags.map(t => t.name).join(', ') : 'general'}`;
 
-Please respond in JSON format with these fields: title, summary, narrative, structured_data, suggested_tags.
-
-Important: Ensure your response is valid JSON that can be parsed.`;
-
-        const messages = [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: this.sanitizeContent(content) }
-        ];
+        const userMessage = `Process this web content into a memo:
+        URL: ${url || 'Unknown'}
+        Content: ${this.sanitizeContent(content)}
+        
+        Return the results in this JSON format:
+        {
+            "title": "Extracted title",
+            "summary": "Brief summary",
+            "narrative": "Narrative version",
+            "structuredData": {}, // Relevant structured data
+            "selectedTag": "Most appropriate tag"
+        }`;
 
         try {
             // Filter out non-Ollama options (url, tags) before passing to chat
             const chatOptions = {
                 temperature: options.temperature || 0.7
             };
-            const response = await this.chat(messages, chatOptions);
             
-            // Parse the JSON response
-            let parsedResponse;
-            try {
-                parsedResponse = JSON.parse(response.content);
-            } catch (parseError) {
-                // Fallback if JSON parsing fails
-                parsedResponse = {
-                    title: 'Processed Content',
-                    summary: 'Content processed by local model',
-                    narrative: response.content.substring(0, 500),
-                    structured_data: {},
-                    suggested_tags: ['local']
-                };
+            const response = await this.chat([
+                { role: 'system', content: systemMessage },
+                { role: 'user', content: userMessage }
+            ], chatOptions);
+
+            // Parse JSON response - try to find JSON in the response like Anthropic does
+            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error('Invalid JSON response from API');
             }
 
-            return {
-                title: parsedResponse.title || 'Untitled',
-                summary: parsedResponse.summary || 'No summary available',
-                narrative: parsedResponse.narrative || 'No narrative available',
-                structuredData: parsedResponse.structured_data || {},
-                selectedTag: parsedResponse.suggested_tags?.[0] || 'general'
-            };
+            return JSON.parse(jsonMatch[0]);
         } catch (error) {
-            // Provide more context for CORS errors
-            if (error.message.includes('CORS Error')) {
-                throw new Error(`Memo processing failed: ${error.message}`);
-            }
-            // Add suggestion to check Ollama service for other errors
-            throw new Error(`Memo processing failed: ${error.message}. Please ensure Ollama service is running and accessible.`);
+            console.error('Error processing memo with Ollama:', error);
+            throw new Error(`Memo processing failed: ${error.message}`);
         }
     }
 
