@@ -1,0 +1,1 @@
+Ultrathink to fix [ ] open issues in specs/issues.md file. Run all tests to ensure nothing is broken due to the fix. Once issues are fixed mark then [x] complete.

@@ -1,0 +1,1 @@
+Study the README.md and images/ folder contents. Identify appropriate section in the README.md where to place each of the images linking back to valid location of these images in the GitHub repo so that the images render correctly.

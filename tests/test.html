@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-LLM Integration Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #00ff00;
+        }
+        .test-output {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Multi-LLM Integration Tests</h1>
+    <div id="output" class="test-output">
+        Loading tests...
+    </div>
+
+    <script type="module">
+        // Redirect console output to the page
+        const outputDiv = document.getElementById('output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalGroup = console.group;
+        const originalGroupEnd = console.groupEnd;
+
+        let indentLevel = 0;
+
+        console.log = (...args) => {
+            const indent = '  '.repeat(indentLevel);
+            outputDiv.innerHTML += indent + args.join(' ') + '\n';
+            originalLog(...args);
+        };
+
+        console.error = (...args) => {
+            const indent = '  '.repeat(indentLevel);
+            outputDiv.innerHTML += indent + args.join(' ') + '\n';
+            originalError(...args);
+        };
+
+        console.group = (...args) => {
+            const indent = '  '.repeat(indentLevel);
+            outputDiv.innerHTML += indent + args.join(' ') + '\n';
+            indentLevel++;
+            originalGroup(...args);
+        };
+
+        console.groupEnd = () => {
+            indentLevel = Math.max(0, indentLevel - 1);
+            originalGroupEnd();
+        };
+
+        // Import and run tests
+        import { testRunner } from './test-runner.js';
+        import './anthropic-provider.test.js';
+
+        // Start tests
+        testRunner.runTests();
+    </script>
+</body>
+</html>
