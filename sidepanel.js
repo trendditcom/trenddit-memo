@@ -628,7 +628,15 @@ async function initializeProviderSettings() {
         // Add provider selection change handler
         providerSelect.addEventListener('change', async (e) => {
             const selectedProvider = e.target.value;
-            await showProviderConfig(selectedProvider);
+            
+            // Get the current config to preserve model selection for the selected provider
+            const currentConfig = await providerConfigManager.getCurrentConfig();
+            let selectedModel = null;
+            if (currentConfig && currentConfig.type === selectedProvider && currentConfig.model) {
+                selectedModel = currentConfig.model;
+            }
+            
+            await showProviderConfig(selectedProvider, selectedModel);
         });
 
         // Update provider indicator after migration and config loading

@@ -1,5 +1,13 @@
 # Issues
 
+[x] Fixed. When switching between models in settings while the model keys are persisted and loaded as expected the model selections revert to the first model in the dropdown even if another model was selected.
+
+Solution: Updated the provider selection change handler in sidepanel.js to properly retrieve and preserve the current model selection when switching between providers. The handler now gets the current configuration and passes the saved model selection to showProviderConfig, ensuring model persistence across provider switches.
+
+[x] Fixed. When Ollama model is selected and user in Chat with Memos after entering a prompt the response includes citations which do not correctly specify the titles of the memos cited and links do not work. Intead the citations are titles Memo 1, Memo 2, etc. Follow the way citations work when Anthropic provider is selected.
+
+Solution: Fixed the system message creation in anthropic-api.js to use actual memo titles `[${memo.title}]` instead of generic labels `[Memo ${index + 1}]` in the memo context. This makes the context consistent with the citation instructions, allowing Ollama and other providers to properly cite memos using their actual titles instead of generic "Memo 1, Memo 2" references.
+
 [x] Fixed. Research online if the solution for making Ollama work with our extension only works with `ollama serve` in terminal or is there a way for it to work when Ollama is run from spotlight.
 
 Solution: Both Ollama app (Spotlight launch) and terminal launch have identical CORS behavior - only the configuration method differs. For the macOS app, use `launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"` then restart the app. For terminal use, set environment variables inline: `OLLAMA_ORIGINS="chrome-extension://*" ollama serve`. Comprehensive documentation added to docs/ollama-setup.md with comparison table and setup instructions for both methods.

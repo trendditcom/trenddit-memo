@@ -136,15 +136,13 @@ export function createSystemMessage(taggedMemos, currentChatTag, useSource = fal
     const memoContext = taggedMemos.map((memo, index) => {
         if (useSource) {
             return `
-                [Memo ${index + 1}]
-                Title: ${memo.title}
+                [${memo.title}]
                 Source Content: ${memo.sourceHtml}
                 URL: ${memo.url}
             `;
         } else {
             return `
-                [Memo ${index + 1}]
-                Title: ${memo.title}
+                [${memo.title}]
                 Narrative: ${memo.narrative}
                 Structured Data: ${JSON.stringify(memo.structuredData)}
             `;
