@@ -12,6 +12,10 @@ class MockOllamaProvider extends LLMProvider {
         this.model = config.model || 'llama2';
         this.availableModels = [];
         this.serviceAvailable = false;
+        // Retry configuration
+        this.maxRetries = config.maxRetries || 3;
+        this.retryDelay = config.retryDelay || 1000; // 1 second default
+        this.retryCount = 0;
     }
 
     async initialize(apiKey = null) {
@@ -84,6 +88,41 @@ class MockOllamaProvider extends LLMProvider {
 
     getAvailableModels() {
         return this.availableModels;
+    }
+
+    // Retry logic for intermittent connection issues
+    async sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    calculateRetryDelay(attempt) {
+        // Exponential backoff: delay * (2 ^ attempt) with some jitter
+        const baseDelay = this.retryDelay;
+        const exponentialDelay = baseDelay * Math.pow(2, attempt - 1);
+        const jitter = Math.random() * 0.1 * exponentialDelay; // 10% jitter
+        return Math.min(exponentialDelay + jitter, 30000); // Cap at 30 seconds
+    }
+
+    async retryWithBackoff(fn, ...args) {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                return await fn(...args);
+            } catch (error) {
+                lastError = error;
+                
+                if (attempt === this.maxRetries) {
+                    break; // Don't delay on the last attempt
+                }
+                
+                const delay = this.calculateRetryDelay(attempt);
+                console.log(`[Ollama Retry] Attempt ${attempt}/${this.maxRetries} failed: ${error.message}. Retrying in ${Math.round(delay)}ms...`);
+                await this.sleep(delay);
+            }
+        }
+        
+        throw lastError;
     }
 }
 
@@ -298,5 +337,98 @@ describe('OllamaProvider Factory Integration Tests', () => {
         // Should have local service configuration
         expect(provider.host).toBeTruthy();
         expect(provider.port).toBeTruthy();
+    });
+});
+
+// Test retry logic for intermittent connection issues
+describe('OllamaProvider Retry Logic Tests', () => {
+    let provider;
+
+    beforeEach(() => {
+        provider = new MockOllamaProvider();
+        provider.retryCount = 0;
+        provider.maxRetries = 3;
+        provider.retryDelay = 100; // Shorter delay for tests
+    });
+
+    it('should have retry configuration properties', () => {
+        expect(provider.maxRetries).toBe(3);
+        expect(provider.retryDelay).toBe(100);
+        expect(provider.retryCount).toBe(0);
+    });
+
+    it('should implement exponential backoff for retries', () => {
+        const delay1 = provider.calculateRetryDelay(1);
+        const delay2 = provider.calculateRetryDelay(2);
+        const delay3 = provider.calculateRetryDelay(3);
+        
+        expect(delay2).toBeGreaterThan(delay1);
+        expect(delay3).toBeGreaterThan(delay2);
+    });
+
+    it('should retry failed requests with exponential backoff', async () => {
+        let attemptCount = 0;
+        provider.mockFailUntilAttempt = 3;
+        
+        provider.testConnection = async function() {
+            attemptCount++;
+            if (attemptCount < this.mockFailUntilAttempt) {
+                throw new Error('Temporary connection failure');
+            }
+            this.serviceAvailable = true;
+            return true;
+        };
+
+        const result = await provider.retryWithBackoff(provider.testConnection.bind(provider));
+        expect(result).toBe(true);
+        expect(attemptCount).toBe(3);
+    });
+
+    it('should fail after maximum retry attempts', async () => {
+        provider.testConnection = async function() {
+            throw new Error('Persistent connection failure');
+        };
+
+        try {
+            await provider.retryWithBackoff(provider.testConnection.bind(provider));
+            expect(false).toBe(true); // Should not reach here
+        } catch (error) {
+            expect(error.message).toContain('Persistent connection failure');
+        }
+    });
+
+    it('should use retry logic in chat method', async () => {
+        let attemptCount = 0;
+        provider.initialized = true;
+        provider.model = 'test-model';
+        
+        const originalFetch = global.fetch;
+        global.fetch = async (url, options) => {
+            attemptCount++;
+            if (attemptCount < 3) {
+                throw new Error('Network error');
+            }
+            return {
+                ok: true,
+                json: async () => ({
+                    message: { content: 'Retry success' },
+                    prompt_eval_count: 10,
+                    eval_count: 5
+                })
+            };
+        };
+
+        const response = await provider.chat([{ role: 'user', content: 'test' }]);
+        expect(response.content).toBe('Retry success');
+        expect(attemptCount).toBe(3);
+        
+        global.fetch = originalFetch;
+    });
+
+    it('should implement sleep utility for retry delays', async () => {
+        const startTime = Date.now();
+        await provider.sleep(50);
+        const endTime = Date.now();
+        expect(endTime - startTime).toBeGreaterThanOrEqual(45); // Allow for timing variance
     });
 });

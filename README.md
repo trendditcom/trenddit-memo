@@ -73,6 +73,9 @@ We support 4 different AI providers because everyone has preferences:
 4. Watch the AI do its magic ✨
 5. Try asking it questions about what you saved
 
+![Content Selection](images/select-content-to-capture.png)
+*Select any content on a webpage by clicking after entering capture mode*
+
 *Pro tip: Start with capturing a few different types of content (articles, product pages, etc.) then ask "what did I save about [topic]?" - it's pretty cool!*
 
 ---
@@ -87,17 +90,26 @@ Here's what we've built so far (and what we're excited about):
 - **Remembers everything**: Saves where you found it, when you saved it, even the site's favicon
 - **Works everywhere**: Any website, any content (we've tested it everywhere we could think of!)
 
+![Saved Memos](images/save-memo.png)
+*Your captured content gets organized automatically with AI-generated summaries*
+
 ### 🏷️ Organization Without the Work  
 - **AI suggests tags**: It's surprisingly good at figuring out how to categorize your stuff
 - **Pretty icons**: 70+ icons to make your collections actually look nice
 - **Make it yours**: Create custom tags with your own colors and icons
 - **Projects that make sense**: Group related content together (like "React Learning" or "Vacation Planning")
 
+![Tag Management](images/tags.png)
+*Organize your content with beautiful tags and icons*
+
 ### 💬 Chat That's Actually Useful
 - **Ask real questions**: "What did I save about performance optimization?" or "Compare the pricing I found"
 - **Switch AI models**: Use Claude for deep analysis, GPT for creativity, Gemini for speed
 - **See your sources**: Every answer links back to what you saved
 - **Save good conversations**: Keep the useful discussions for later
+
+![Chat Interface](images/chat-with-memo.png)
+*Have natural conversations with your saved content using AI*
 
 ### 🛡️ Privacy We Actually Care About
 - **Your computer, your data**: Everything stored locally by default
@@ -132,7 +144,8 @@ Honestly, it depends on what you're doing:
 **For total privacy (our personal favorite for sensitive stuff):**
 - **Ollama** keeps everything on your machine
 - Zero API costs once you're set up
-- Requires a bit of technical setup, but we have [good docs](docs/ollama-setup.md)
+- Enhanced with automatic retry logic and error recovery
+- Requires a bit of technical setup, but we have [comprehensive docs](docs/ollama-setup.md)
 
 **For the best AI performance:**
 - **Anthropic Claude** is incredible for deep analysis and complex reasoning
@@ -162,6 +175,9 @@ Honestly, it depends on what you're doing:
 3. Suggests tags to keep things organized
 4. Extracts structured data like prices, ratings, dates
 
+![Memo Details](images/memo-details.png)
+*View detailed analysis of your saved content including AI-generated summaries and structured data*
+
 #### Staying Organized
 1. Check out the AI's suggested tags (they're usually pretty good!)
 2. Add your own colors and icons to make it pretty
@@ -185,7 +201,7 @@ Honestly, it depends on what you're doing:
 - **API Key tip**: Starts with `sk-ant-`
 
 **OpenAI GPT**  
-- **Models**: GPT-4o-mini, GPT-4o, GPT-4.1, GPT-4.1-mini
+- **Models**: o4-mini, GPT-4o, GPT-4.1, GPT-4.1-mini
 - **When we use it**: Creative tasks, code generation, general brainstorming
 - **API Key tip**: Starts with `sk-`
 
@@ -197,7 +213,10 @@ Honestly, it depends on what you're doing:
 **Ollama (Local)**
 - **Models**: Llama 2, Mistral, CodeLlama, tons more
 - **When we use it**: Privacy-sensitive stuff, offline work, experimenting
-- **Setup**: Just install from [ollama.ai](https://ollama.ai)
+- **Setup**: Install from [ollama.ai](https://ollama.ai) + enhanced retry logic for reliable connections
+
+![Ollama Settings](images/use-ollama-models.png)
+*Configure Ollama for completely private, local AI processing*
 
 </details>
 
@@ -267,23 +286,26 @@ Honestly, it depends on what you're doing:
 ### How the AI Magic Works
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  You interact   │────▶│ Our Provider │────▶│ AI Provider │
-│  with UI        │     │ Factory      │     │ (Claude/etc)│  
-└─────────────────┘     └──────────────┘     └─────────────┘
-         │                      │                     │
-         ▼                      ▼                     ▼
-┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Your Data      │     │  Settings &  │     │   Chat &    │
-│  (Local)        │     │ Config       │     │ Processing  │
-└─────────────────┘     └──────────────┘     └─────────────┘
+│  You interact   │────▶│ LLM Provider │────▶│ AI Provider │
+│  with UI        │     │ Factory      │     │(Claude/GPT/ │  
+└─────────────────┘     └──────────────┘     │Gemini/Ollama)│
+         │                      │             └─────────────┘
+         ▼                      ▼                     │
+┌─────────────────┐     ┌──────────────┐             ▼
+│  Your Data      │     │  Provider    │     ┌─────────────┐
+│  (Local)        │     │ Configuration│     │   Chat &    │
+└─────────────────┘     └──────────────┘     │ Processing  │
+                                             └─────────────┘
 ```
 
 ### The Tech We're Proud Of
-- **Multi-LLM Integration**: One interface that works with 4 different AI providers
+- **Multi-LLM Integration**: One unified interface that works with 4 different AI providers
 - **Browser-First**: Everything uses native browser APIs (no Node.js dependencies)  
-- **Clean Architecture**: We use patterns that make adding new features easier
-- **Provider Factory**: Makes it simple to add new AI providers later
+- **Clean Architecture**: Provider factory pattern makes adding new features easier
+- **Provider Factory**: Simple interface to add new AI providers
 - **Local-First Storage**: Your data stays on your machine using Chrome's storage APIs
+- **Enhanced Error Handling**: Robust retry logic and graceful degradation
+- **Performance Optimized**: Smart timeouts and caching for local and cloud providers
 
 ---
 
@@ -299,12 +321,17 @@ We're pretty excited about what we've shipped recently:
 - ✅ Google Gemini support (super fast)
 - ✅ Switch between providers seamlessly
 - ✅ Each provider gets its own models and settings
+- ✅ Unified provider interface with factory pattern
+- ✅ Comprehensive testing across all providers
 
-**Privacy-First Local AI (2024)**  
+**Enhanced Local AI (2024)**  
 - ✅ Ollama integration for running AI on your machine
 - ✅ Zero cloud dependencies if you want them
 - ✅ Automatically discovers your installed models
 - ✅ Works completely offline
+- ✅ Enhanced retry logic with exponential backoff
+- ✅ Comprehensive error handling and setup guidance
+- ✅ Performance optimizations for local models
 
 **Core Experience (2024)**
 - ✅ Modern Chrome extension that actually works
@@ -312,6 +339,7 @@ We're pretty excited about what we've shipped recently:
 - ✅ 70+ beautiful icons for organization
 - ✅ Natural conversation interface
 - ✅ Local storage with optional sync
+- ✅ Robust provider configuration management
 
 ### 🚧 What We're Working On Now
 
@@ -326,6 +354,11 @@ We're pretty excited about what we've shipped recently:
 - 🔄 Describing images and screenshots
 - 🔄 Capturing video transcripts
 - 🔄 Processing audio content
+
+**Developer Experience**
+- 🔄 Enhanced testing framework with browser compatibility
+- 🔄 Performance monitoring and optimization tools
+- 🔄 Better error reporting and debugging utilities
 
 ### 🎯 Next Quarter (Q2-Q3 2025)
 
@@ -410,6 +443,9 @@ npm test
 npm run test:syntax      # Make sure we didn't break JavaScript
 npm run test:simple     # Core functionality tests  
 npm run test:browser    # Open test.html in your browser
+
+# We also have comprehensive provider tests
+# (Check tests/ folder for individual provider test files)
 ```
 
 ### Want to Contribute?
@@ -433,8 +469,10 @@ We try to review PRs quickly and give helpful feedback. Don't worry about making
 - ⚡ **Content capture**: Usually under 2 seconds (we're pretty proud of this)
 - 📦 **Extension size**: Under 2MB with all 4 AI providers included
 - 🔋 **Memory usage**: About 10MB in the background (barely noticeable)
-- 🚀 **AI responses**: 2-10 seconds depending on which provider you use
+- 🚀 **AI responses**: 2-10 seconds for cloud, varies locally with Ollama
 - 📊 **Smart processing**: We keep it under 4096 tokens to save on costs
+- 🔄 **Enhanced reliability**: Automatic retry logic with exponential backoff
+- 🎯 **Provider switching**: Seamless switching between all 4 providers
 
 ### Privacy (This is Important to Us)
 - 🔒 **Local-first**: Everything lives on your computer unless you choose sync

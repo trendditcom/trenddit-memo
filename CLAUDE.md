@@ -132,6 +132,7 @@ The extension uses strict CSP settings defined in manifest.json:
   - `anthropic-provider.js` - Anthropic Claude integration
   - `openai-provider.js` - OpenAI GPT integration  
   - `gemini-provider.js` - Google Gemini integration
+  - `ollama-provider.js` - Ollama local LLM integration with retry logic
 - `llm-provider-factory.js` - Provider factory and management
 - `config/provider-config.js` - Provider configuration management
 - `memos.js` - Content management
@@ -223,6 +224,7 @@ The extension uses strict CSP settings defined in manifest.json:
 - Supported Models: Dynamic (based on installed models)
 - Setup: https://ollama.ai
 - Privacy: All processing stays local on your machine
+- **Enhanced Features**: Retry logic for intermittent connections, exponential backoff, comprehensive error handling
 
 ### Configuration
 1. Open the extension side panel
@@ -238,6 +240,44 @@ The extension uses strict CSP settings defined in manifest.json:
 - Existing memos work with any provider
 - Chat conversations maintain context when switching providers
 - Each provider has optimized token counting and processing
+
+### Ollama Enhanced Features
+
+#### Retry Logic and Error Handling
+The Ollama provider includes sophisticated retry logic to handle intermittent connection issues:
+
+**Automatic Retry Configuration:**
+- Default: 3 retry attempts with exponential backoff
+- Configurable retry count and base delay
+- Intelligent error detection (retries network errors, skips 403/404)
+- Maximum delay cap of 30 seconds
+
+**Exponential Backoff:**
+- Formula: `delay * (2^attempt) + jitter`
+- Jitter: 10% randomization to prevent thundering herd
+- Progressive delays: ~1s, ~2s, ~4s for default configuration
+
+**Error Classification:**
+- **Retryable**: Network timeouts, connection refused, temporary service issues
+- **Non-retryable**: CORS errors (403), missing endpoints (404), invalid JSON responses
+- **Comprehensive logging**: Detailed debug information for troubleshooting
+
+**Usage Example:**
+```javascript
+const provider = new OllamaProvider({
+    host: 'localhost',
+    port: 11434,
+    model: 'llama2',
+    maxRetries: 5,        // Custom retry count
+    retryDelay: 2000      // 2 second base delay
+});
+```
+
+#### Performance Optimizations
+- **Smart timeout handling**: 60s for chat, 10s for connection tests, 5min for model downloads
+- **Connection pooling**: Reuses existing connections when possible
+- **Model caching**: Avoids repeated model discovery calls
+- **Progress indicators**: Real-time feedback during longer operations
 
 ## Dependencies
 
