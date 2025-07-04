@@ -196,6 +196,12 @@ export async function displayMemoDetail(memo, tags) {
         existingTranscriptBtn.remove();
     }
     
+    // Remove any existing transcript help text
+    const existingHelpText = document.querySelector('.youtube-transcript-help');
+    if (existingHelpText) {
+        existingHelpText.remove();
+    }
+    
     if (memo.platform === 'youtube' || 
         (memo.structuredData && memo.structuredData.platform === 'youtube') ||
         (memo.structuredData && memo.structuredData.videoMetadata && memo.structuredData.videoMetadata.thumbnail)) {
@@ -234,8 +240,16 @@ export async function displayMemoDetail(memo, tags) {
                 captureYouTubeTranscript(memo);
             });
             
+            // Create help text for transcript capture
+            const helpText = document.createElement('div');
+            helpText.className = 'youtube-transcript-help mb-4 text-xs text-gray-600';
+            helpText.textContent = 'Expand description. Click Show Transcript. Toggle timestamps off. Select transcript container.';
+            
             // Insert transcript button before summary
             memoSummaryElement.parentNode.insertBefore(transcriptButton, memoSummaryElement);
+            
+            // Insert help text after the button
+            memoSummaryElement.parentNode.insertBefore(helpText, memoSummaryElement);
         }
     }
     

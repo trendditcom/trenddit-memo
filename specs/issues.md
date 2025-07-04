@@ -1,5 +1,7 @@
 # Issues
 
+[x] When Capture Transcript button is displayed mention a tiny font help text below it in dark gray color: "Expand description. Click Show Transcript. Toggle timestamps off. Select transcript container."
+
 [x] When using capture transcript button once transcript is successfully added to the memo always hide the capture transcript button after that point for that memo.
 
 Solution: Fixed by implementing transcript status tracking in the memo data structure. When a transcript is successfully captured, the `transcriptAdded: true` flag is set in the memo's `structuredData`. Modified the `displayMemoDetail` function in ui.js to check this flag and only show the "Capture Transcript" button for YouTube memos that don't already have a transcript. Additionally, enhanced the `memoUpdated` message handler in sidepanel.js to refresh the current memo detail view when a transcript is successfully added, ensuring the button is hidden immediately after successful capture.
