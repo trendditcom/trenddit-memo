@@ -314,7 +314,11 @@ if (!window.avnamMemoInitialized) {
             const transcriptText = element.textContent || element.innerText || '';
             
             if (!transcriptText.trim()) {
-                alert('No text content found in selected element. Please select transcript text.');
+                // Send error message to sidepanel instead of alert
+                chrome.runtime.sendMessage({
+                    action: 'error',
+                    error: 'No text content found in selected element. Please select transcript text.'
+                });
                 return;
             }
             
@@ -325,6 +329,12 @@ if (!window.avnamMemoInitialized) {
                 .trim();
             
             console.log('Captured transcript text:', cleanedTranscript.substring(0, 100) + '...');
+            
+            // Notify that transcript processing is starting
+            chrome.runtime.sendMessage({
+                action: 'savingMemo',
+                message: 'Processing transcript and updating memo...'
+            });
             
             // Send transcript data to background script to update existing memo
             chrome.runtime.sendMessage({
@@ -354,21 +364,33 @@ if (!window.avnamMemoInitialized) {
                 
                 if (!response) {
                     console.error('No response received from background script');
-                    alert('Failed to update memo with transcript. Please try again.');
+                    chrome.runtime.sendMessage({
+                        action: 'error',
+                        error: 'Failed to update memo with transcript. No response from background script.'
+                    });
                     return;
                 }
                 
                 if (response.success) {
-                    alert('Transcript successfully added to memo!');
+                    chrome.runtime.sendMessage({
+                        action: 'memoUpdated',
+                        message: 'Transcript successfully added to memo!'
+                    });
                 } else {
                     console.error('Failed to update memo with transcript:', response.error || 'Unknown error');
-                    alert('Failed to update memo with transcript. Please try again.');
+                    chrome.runtime.sendMessage({
+                        action: 'error',
+                        error: 'Failed to update memo with transcript: ' + (response.error || 'Unknown error')
+                    });
                 }
             });
             
         } catch (error) {
             console.error('Error capturing transcript:', error);
-            alert('Failed to capture transcript. Please try again.');
+            chrome.runtime.sendMessage({
+                action: 'error',
+                error: 'Failed to capture transcript: ' + error.message
+            });
             
             // Reset transcript capture mode on error
             window.avnamMemo.isTranscriptCaptureMode = false;

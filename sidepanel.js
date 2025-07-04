@@ -588,6 +588,10 @@ chrome.runtime.onMessage.addListener((message) => {
         }
     } else if (message.action === 'savingMemo') {
         showStatus('processing', message.message || 'Extracting content with AI');
+    } else if (message.action === 'memoUpdated') {
+        loadMemos(); // Refresh the memo list
+        showStatus('success', message.message || 'Memo updated successfully');
+        resetMemoButton();
     }
 });
 
