@@ -131,6 +131,10 @@ export class AnthropicProvider extends LLMProvider {
 
         const { url, tags } = options;
         
+        // Truncate content to prevent rate limit errors
+        // Leave room for system message and JSON response (approximately 2000 tokens)
+        const truncatedContent = this.truncateContent(content, 28000);
+        
         const systemMessage = `You are an AI assistant that processes web content into structured memos. 
         Given HTML content and a URL, you will:
         1. Extract and summarize the key information
@@ -142,7 +146,7 @@ export class AnthropicProvider extends LLMProvider {
 
         const userMessage = `Process this web content into a memo:
         URL: ${url || 'Unknown'}
-        Content: ${this.sanitizeContent(content)}
+        Content: ${this.sanitizeContent(truncatedContent)}
         
         Return the results in this JSON format:
         {
@@ -159,13 +163,52 @@ export class AnthropicProvider extends LLMProvider {
                 { role: 'user', content: userMessage }
             ], options);
 
-            // Parse JSON response
-            const jsonMatch = response.reply.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('Invalid JSON response from API');
+            // Parse JSON response with robust fallback strategies
+            let parsedResponse;
+            try {
+                // First try to parse as-is
+                parsedResponse = JSON.parse(response.reply);
+            } catch (parseError) {
+                // Try to extract JSON from markdown code blocks or other formatting
+                try {
+                    let jsonText = response.reply;
+                    
+                    // Remove markdown code blocks if present
+                    const jsonBlockMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+                    if (jsonBlockMatch) {
+                        jsonText = jsonBlockMatch[1];
+                    }
+                    
+                    // Try to find JSON object boundaries
+                    const openBrace = jsonText.indexOf('{');
+                    const closeBrace = jsonText.lastIndexOf('}');
+                    
+                    if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
+                        jsonText = jsonText.substring(openBrace, closeBrace + 1);
+                        
+                        // Clean up common JSON formatting issues
+                        jsonText = jsonText
+                            .replace(/,\s*}/g, '}')  // Remove trailing commas
+                            .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
+                            .replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove control characters
+                    }
+                    
+                    parsedResponse = JSON.parse(jsonText.trim());
+                } catch (secondParseError) {
+                    console.error('Anthropic response:', response.reply);
+                    throw new Error(`Failed to parse Anthropic response as JSON. Response: ${response.reply.substring(0, 200)}...`);
+                }
             }
 
-            return JSON.parse(jsonMatch[0]);
+            // Validate required fields
+            const requiredFields = ['title', 'summary', 'narrative', 'structuredData', 'selectedTag'];
+            for (const field of requiredFields) {
+                if (!(field in parsedResponse)) {
+                    parsedResponse[field] = field === 'structuredData' ? {} : '';
+                }
+            }
+
+            return parsedResponse;
         } catch (error) {
             console.error('Error processing memo with Anthropic:', error);
             throw new Error(`Memo processing failed: ${error.message}`);

@@ -127,8 +127,12 @@ export class OpenAIProvider extends LLMProvider {
             throw new Error('Provider not initialized. Call initialize() first.');
         }
 
+        // Truncate content to prevent rate limit errors
+        // Leave room for system message and JSON response (approximately 2000 tokens)
+        const truncatedContent = this.truncateContent(content, 28000);
+        
         // Sanitize content using inherited method
-        const sanitizedContent = this.sanitizeContent(content);
+        const sanitizedContent = this.sanitizeContent(truncatedContent);
         
         // Create system message for memo processing
         const systemPrompt = `You are an AI assistant that processes web content into structured memos. 

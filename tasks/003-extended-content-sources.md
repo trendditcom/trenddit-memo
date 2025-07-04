@@ -6,11 +6,13 @@ Enable capturing and processing content from YouTube videos, Twitter threads, an
 ## Development Tasks
 
 ### Phase 1: YouTube Integration
-[x] Create youtube-extractor.js content script for YouTube pages
-[x] Implement YouTube transcript extraction using YouTube's API or DOM parsing
+[x] Integrate YouTube content extraction directly into content.js
+[x] Implement automatic YouTube detection - show hourglass cursor instead of hover/selection
+[x] Implement YouTube transcript extraction using video.google.com API with DOM fallback
 [x] Extract video metadata (title, author, duration, views, description)
+[x] Extract video thumbnail URL from YouTube video ID
 [x] Add YouTube-specific content processing in background.js
-[x] Create YouTube video icon and styling for memo display
+[x] Create YouTube video thumbnail display in memo detail view
 [ ] Test with various YouTube video types (shorts, live streams, regular videos)
 
 ### Phase 2: Twitter/X Integration
@@ -57,6 +59,8 @@ Enable capturing and processing content from YouTube videos, Twitter threads, an
 2. **Progressive Enhancement**: Ensure basic text capture works even if platform-specific features fail
 3. **Performance**: Implement lazy loading for large content (long YouTube transcripts, Twitter threads)
 4. **Privacy**: Respect user privacy settings and platform terms of service
+5. **YouTube-Specific**: Automatically detect YouTube pages and process without hover/selection UI
+6. **API-First Approach**: Use official APIs (video.google.com for transcripts) with DOM parsing as fallback
 
 ### Technical Considerations
 1. **Content Scripts**: Each platform needs its own content script with specific DOM selectors

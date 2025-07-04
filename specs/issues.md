@@ -1,5 +1,57 @@
 # Issues
 
+[ ] Research online why this is not working and find free alternatives which are more robust or make this work: When YouTube memo is being captured use GET http://video.google.com/timedtext?lang=en&v=VIDEO_ID to get the video transcript and process. As a fallback parse the DOM of the page and capture video description.
+
+[x] When YouTube captured memo is clicked for details more than once the thumbnail shows up as multiple copies
+
+Solution: Fixed by adding a check to remove any existing YouTube thumbnail container before adding a new one in the displayMemoDetail function in ui.js. Added a unique class 'youtube-thumbnail-container' for easy identification and removal.
+
+[x] YouTube memos in memos list should show thumbnail saved with memo
+
+Solution: Updated the displayMemoList function in ui.js to check for YouTube memos and display their thumbnails in the list view. Added proper thumbnail detection and display logic with error handling for failed image loads.
+
+[x] When YouTube memo is being captured change notification to indicate "Processing YouTube Page" amd note "Hover selection is deactivated, processing content automatically..."
+
+Solution: Updated the notification message in content.js to display "Processing YouTube Page - Hover selection is deactivated, processing content automatically" when YouTube content is being processed. Modified sidepanel.js to support custom messages in the savingMemo action.
+
+[x] When YouTube memo is being captured use GET http://video.google.com/timedtext?lang=en&v=VIDEO_ID to get the video transcript and process.
+
+Solution: Already implemented in content.js using HTTPS (https://video.google.com/timedtext) to avoid mixed content issues. The implementation includes multiple language fallbacks (en, en-US, en-GB) and DOM parsing as a backup method when the API is unavailable.
+
+[x] Mixed Content: The page at 'https://www.youtube.com/watch?v=giT0ytynSqg' was loaded over HTTPS, but requested an insecure resource 'http://video.google.com/timedtext?lang=en&v=giT0ytynSqg'. This request has been blocked; the content must be served over HTTPS.
+
+Solution: Fixed by updating content.js to use HTTPS instead of HTTP for all video.google.com/timedtext API calls at lines 394 and 405. Changed all transcript URL fetches from http://video.google.com to https://video.google.com to prevent mixed content security errors.
+
+[x] Error processing memo with Anthropic: SyntaxError: Expected ',' or ']' after array element in JSON at position 3776 (line 38 column 37). Error processing YouTube memo: Error: Memo processing failed: Expected ',' or ']' after array element in JSON at position 3776 (line 38 column 37). Error details: Memo processing failed: Expected ',' or ']' after array element in JSON at position 3776 (line 38 column 37)
+
+Solution: Fixed by implementing robust JSON parsing in anthropic-provider.js with multiple fallback strategies: 1) First attempts direct JSON parsing, 2) Extracts JSON from markdown code blocks if present, 3) Finds JSON object boundaries, 4) Removes trailing commas and control characters that cause parse errors, 5) Validates and ensures all required fields are present. This matches the robust parsing approach used in the Gemini provider.
+
+
+[x] Rollback YouTube Integration and pivot the specification and development to the following:
+    - When Capture button is clicked recognize if the webpage is YouTube
+    - Instead of activating hover and selection behavior change cursor to hourglass while notification updates the user that YouTube video page with title is recognized and being processed
+    - Parse page HTML DOM for thumbnail link. Modify for YouTube memos and details to add thumbnail on top of text summary.
+    - Use GET http://video.google.com/timedtext?lang=en&v=VIDEO_ID to get the video transcript.
+    - Accordingly change and update the YouTube Integration tasks and roadmap.
+
+Solution: Implemented new YouTube integration approach by modifying content.js to automatically detect YouTube pages and show hourglass cursor instead of hover/selection UI. Added thumbnail extraction using YouTube video ID to generate thumbnail URLs. Implemented transcript fetching using video.google.com API with DOM parsing as fallback. Updated memo detail view in ui.js to display YouTube thumbnails above the summary. Updated YouTube Integration tasks in tasks/003-extended-content-sources.md to reflect the new implementation approach.
+
+[x] When capturing a youtube page (selection around video and description). Anthropic chat API error: Error: This request would exceed the rate limit for your organization (ddac29b0-29a0-496f-ba20-0b0ad3960e81) of 40,000 input tokens per minute. For details, refer to: https://docs.anthropic.com/en/api/rate-limits. You can see the response headers for current usage. Please reduce the prompt length or the maximum tokens requested, or try again later. You may also contact sales at https://www.anthropic.com/contact-sales to discuss your options for a rate limit increase.
+
+Solution: Fixed rate limit issue by implementing token counting and content truncation across all LLM providers. Added `truncateContent()` method to base LLMProvider class that estimates token count and truncates content to 28,000 tokens (leaving room for system messages and responses). All providers (Anthropic, OpenAI, Gemini, Ollama) now use this method to prevent rate limit errors when processing large YouTube content including transcripts. The truncation preserves word boundaries and adds a clear indication when content is truncated.
+
+[x] Error communicating with YouTube content script: [object Object]
+
+Solution: Fixed error logging in background.js line 308 where `chrome.runtime.lastError` was being logged as an object instead of its message property. Changed to `chrome.runtime.lastError.message` for proper error display.
+
+[x] Failed to extract YouTube content: The message port closed before a response was received.\
+
+Solution: Fixed message port issue by integrating YouTube content extraction functionality directly into the main content script (content.js) instead of using separate youtube-extractor.js. This eliminates conflicts between multiple content scripts on YouTube pages. Updated manifest.json to remove duplicate YouTube content script registration.
+
+[x] Fixed. Failed to extract YouTube content: Unknown error
+
+Solution: Added missing handler for 'extractYouTubeContent' action in background.js message listener. The content script was sending this message but the background script wasn't handling it, causing the response to be undefined and triggering the "Unknown error" message. The fix forwards the extraction request to the YouTube content script and properly handles the response.
+
 [x] Fixed. When switching between models in settings while the model keys are persisted and loaded as expected the model selections revert to the first model in the dropdown even if another model was selected.
 
 Solution: Updated the provider selection change handler in sidepanel.js to properly retrieve and preserve the current model selection when switching between providers. The handler now gets the current configuration and passes the saved model selection to showProviderConfig, ensuring model persistence across provider switches.

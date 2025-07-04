@@ -587,7 +587,7 @@ chrome.runtime.onMessage.addListener((message) => {
             checkProviderConfiguration();
         }
     } else if (message.action === 'savingMemo') {
-        showStatus('processing', 'Extracting content with AI');
+        showStatus('processing', message.message || 'Extracting content with AI');
     }
 });
 

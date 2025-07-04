@@ -299,6 +299,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: false, error: error.message });
             });
         return true; // Will respond asynchronously
+    } else if (request.action === 'extractYouTubeContent') {
+        // Forward the request to the YouTube content script
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+            if (tabs.length > 0) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'extractYouTubeContent' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('Error communicating with YouTube content script:', chrome.runtime.lastError.message);
+                        sendResponse({ 
+                            success: false, 
+                            error: chrome.runtime.lastError.message 
+                        });
+                    } else if (response) {
+                        sendResponse(response);
+                    } else {
+                        sendResponse({ 
+                            success: false, 
+                            error: 'No response from YouTube content script' 
+                        });
+                    }
+                });
+            } else {
+                sendResponse({ 
+                    success: false, 
+                    error: 'No active tab found' 
+                });
+            }
+        });
+        return true; // Will respond asynchronously
     } else if (request.action === 'chatMessage') {
         providerManager.processChat(request.messages)
             .then(response => {

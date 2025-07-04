@@ -83,6 +83,13 @@ export async function displayMemoList(memos) {
         console.log('displayMemoList memo.tag || Untagged:', memo.tag || 'Untagged');
         const memoItem = document.createElement('div');
         memoItem.className = 'memo-list-item bg-white rounded-lg shadow p-4 cursor-pointer relative';
+        
+        // Check if this is a YouTube memo with a thumbnail
+        const isYouTubeMemo = memo.platform === 'youtube' || 
+            (memo.structuredData && memo.structuredData.platform === 'youtube') ||
+            (memo.structuredData && memo.structuredData.videoMetadata && memo.structuredData.videoMetadata.thumbnail);
+        const thumbnail = memo.structuredData?.videoMetadata?.thumbnail;
+        
         memoItem.innerHTML = `
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center">
@@ -100,6 +107,14 @@ export async function displayMemoList(memos) {
                     </button>
                 </div>
             </div>
+            ${isYouTubeMemo && thumbnail ? `
+                <div class="mb-2">
+                    <img src="${thumbnail}" 
+                         alt="${memo.title}" 
+                         class="w-full rounded-md shadow-sm"
+                         onerror="this.onerror=null; this.style.display='none'">
+                </div>
+            ` : ''}
             <p class="text-[0.6rem] leading-[0.9rem] text-gray-600 mb-2">${memo.summary}</p>
             <div class="text-xs text-gray-500">
                 ${new Date(memo.timestamp).toLocaleString()}
@@ -165,7 +180,39 @@ export async function displayMemoDetail(memo, tags) {
     document.getElementById('memoTimestamp').textContent = new Date(memo.timestamp).toLocaleString();
     document.getElementById('memoSource').href = memo.url;
     document.getElementById('memoFavicon').src = memo.favicon;
-    document.getElementById('memoSummary').textContent = memo.summary;
+    
+    // Check if this is a YouTube memo and add thumbnail if available
+    const memoSummaryElement = document.getElementById('memoSummary');
+    
+    // Remove any existing thumbnail container first
+    const existingThumbnail = document.querySelector('.youtube-thumbnail-container');
+    if (existingThumbnail) {
+        existingThumbnail.remove();
+    }
+    
+    if (memo.platform === 'youtube' || 
+        (memo.structuredData && memo.structuredData.platform === 'youtube') ||
+        (memo.structuredData && memo.structuredData.videoMetadata && memo.structuredData.videoMetadata.thumbnail)) {
+        
+        const thumbnail = memo.structuredData?.videoMetadata?.thumbnail;
+        
+        if (thumbnail) {
+            // Create thumbnail image element
+            const thumbnailContainer = document.createElement('div');
+            thumbnailContainer.className = 'mb-4 youtube-thumbnail-container';
+            thumbnailContainer.innerHTML = `
+                <img src="${thumbnail}" 
+                     alt="${memo.title}" 
+                     class="w-full rounded-lg shadow-md"
+                     onerror="this.onerror=null; this.src='${memo.structuredData?.videoMetadata?.thumbnailFallbacks?.[0] || memo.favicon}'">
+            `;
+            
+            // Insert thumbnail before summary
+            memoSummaryElement.parentNode.insertBefore(thumbnailContainer, memoSummaryElement);
+        }
+    }
+    
+    memoSummaryElement.textContent = memo.summary;
 
     // Add tag display to metadata section
     const tagDisplay = document.createElement('div');

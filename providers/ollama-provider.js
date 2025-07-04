@@ -276,6 +276,10 @@ export class OllamaProvider extends LLMProvider {
 
         const { url, tags } = options;
         
+        // Truncate content to prevent rate limit errors
+        // Leave room for system message and JSON response (approximately 2000 tokens)
+        const truncatedContent = this.truncateContent(content, 28000);
+        
         const systemMessage = `You are an AI assistant that processes web content into structured memos. 
         Given HTML content and a URL, you will:
         1. Extract and summarize the key information
@@ -287,7 +291,7 @@ export class OllamaProvider extends LLMProvider {
 
         const userMessage = `Process this web content into a memo:
         URL: ${url || 'Unknown'}
-        Content: ${this.sanitizeContent(content)}
+        Content: ${this.sanitizeContent(truncatedContent)}
         
         Return the results in this JSON format:
         {

@@ -70,4 +70,27 @@ export class LLMProvider {
         
         return content;
     }
+
+    // Truncate content to fit within token limits
+    truncateContent(content, maxTokens = 30000) {
+        if (!content) return '';
+        
+        const estimatedTokens = this.calculateTokens(content);
+        if (estimatedTokens <= maxTokens) {
+            return content;
+        }
+        
+        // Calculate the ratio to truncate by
+        const ratio = maxTokens / estimatedTokens;
+        const targetLength = Math.floor(content.length * ratio * 0.9); // 90% for safety margin
+        
+        // Truncate at word boundaries
+        let truncated = content.substring(0, targetLength);
+        const lastSpace = truncated.lastIndexOf(' ');
+        if (lastSpace > targetLength * 0.8) {
+            truncated = truncated.substring(0, lastSpace);
+        }
+        
+        return truncated + '...[Content truncated due to length]';
+    }
 } 
