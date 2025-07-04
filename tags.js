@@ -168,10 +168,20 @@ export async function initializeTags() {
     const result = await chrome.storage.local.get(['tags']);
     const existingTags = result.tags || [];
     
-    // If no tags exist, initialize with predefined tags
+    // Check if we need to update tags (either no tags exist or we don't have all predefined tags)
+    const existingTagNames = existingTags.map(tag => tag.name);
+    const predefinedTagNames = predefinedTags.map(tag => tag.name);
+    const missingTags = predefinedTags.filter(tag => !existingTagNames.includes(tag.name));
+    
     if (existingTags.length === 0) {
+        // No tags exist, initialize with all predefined tags
         await saveToStorage('tags', predefinedTags);
-        showStatus('success', 'Tags initialized');
+        showStatus('success', 'Tags initialized with 23 default tags');
+    } else if (missingTags.length > 0) {
+        // Some predefined tags are missing, add them
+        const updatedTags = [...existingTags, ...missingTags];
+        await saveToStorage('tags', updatedTags);
+        showStatus('success', `Added ${missingTags.length} new default tags`);
     }
     
     await loadTags();
