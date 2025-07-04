@@ -307,16 +307,54 @@ if (!window.avnamMemoInitialized) {
         const metadata = {};
         
         try {
-            // Extract video title
-            const titleElement = document.querySelector('h1.ytd-video-primary-info-renderer, h1.title, h1.ytd-watch-metadata');
-            if (titleElement) {
-                metadata.title = titleElement.textContent?.trim() || '';
+            // Extract video title using multiple selectors
+            const titleSelectors = [
+                'h1.ytd-video-primary-info-renderer',
+                'h1.title',
+                'h1.ytd-watch-metadata',
+                'h1.ytd-videoPrimaryInfoRenderer',
+                '#container h1',
+                '.ytd-video-primary-info-renderer .title',
+                'ytd-watch-metadata h1',
+                'h1[class*="title"]'
+            ];
+            
+            let titleElement = null;
+            for (const selector of titleSelectors) {
+                titleElement = document.querySelector(selector);
+                if (titleElement && titleElement.textContent?.trim()) {
+                    metadata.title = titleElement.textContent.trim();
+                    break;
+                }
             }
             
-            // Extract channel name
-            const channelElement = document.querySelector('ytd-channel-name a, .ytd-channel-name a, #channel-name a');
-            if (channelElement) {
-                metadata.author = channelElement.textContent?.trim() || '';
+            // Fallback: try to extract from page title
+            if (!metadata.title && document.title) {
+                const pageTitle = document.title.replace(' - YouTube', '');
+                if (pageTitle !== 'YouTube') {
+                    metadata.title = pageTitle;
+                }
+            }
+            
+            // Extract channel name using multiple selectors
+            const channelSelectors = [
+                'ytd-channel-name a',
+                '.ytd-channel-name a',
+                '#channel-name a',
+                'ytd-video-owner-renderer a',
+                '#owner-text a',
+                '.ytd-video-owner-renderer .ytd-channel-name a',
+                'a[href*="/channel/"]',
+                'a[href*="/@"]'
+            ];
+            
+            let channelElement = null;
+            for (const selector of channelSelectors) {
+                channelElement = document.querySelector(selector);
+                if (channelElement && channelElement.textContent?.trim()) {
+                    metadata.author = channelElement.textContent.trim();
+                    break;
+                }
             }
             
             // Extract video thumbnail
@@ -332,41 +370,134 @@ if (!window.avnamMemoInitialized) {
                 ];
             }
             
-            // Extract video duration
-            const durationElement = document.querySelector('.ytp-time-duration, .ytd-thumbnail-overlay-time-status-renderer');
-            if (durationElement) {
-                metadata.duration = durationElement.textContent?.trim() || '';
+            // Extract video duration using multiple selectors
+            const durationSelectors = [
+                '.ytp-time-duration',
+                '.ytd-thumbnail-overlay-time-status-renderer',
+                '.ytp-time-display .ytp-time-duration',
+                'span.ytd-thumbnail-overlay-time-status-renderer',
+                '.badge-shape-wiz__text'
+            ];
+            
+            for (const selector of durationSelectors) {
+                const durationElement = document.querySelector(selector);
+                if (durationElement && durationElement.textContent?.trim()) {
+                    metadata.duration = durationElement.textContent.trim();
+                    break;
+                }
             }
             
-            // Extract view count
-            const viewElement = document.querySelector('.view-count, .ytd-video-view-count-renderer, #info-text');
-            if (viewElement) {
-                metadata.views = viewElement.textContent?.trim() || '';
+            // Extract view count using multiple selectors
+            const viewSelectors = [
+                '.view-count',
+                '.ytd-video-view-count-renderer',
+                '#info-text',
+                'ytd-video-view-count-renderer',
+                '.view-count-text',
+                '#info .style-scope.ytd-video-primary-info-renderer',
+                'span[class*="view"]'
+            ];
+            
+            for (const selector of viewSelectors) {
+                const viewElement = document.querySelector(selector);
+                if (viewElement && viewElement.textContent?.trim()) {
+                    const viewText = viewElement.textContent.trim();
+                    if (viewText.includes('view') || viewText.includes('watching')) {
+                        metadata.views = viewText;
+                        break;
+                    }
+                }
             }
             
-            // Extract description
-            const descriptionElement = document.querySelector('#description, ytd-expander #content, .ytd-video-secondary-info-renderer #description');
-            if (descriptionElement) {
-                metadata.description = descriptionElement.textContent?.trim() || '';
+            // Extract description using multiple selectors
+            const descriptionSelectors = [
+                '#description',
+                'ytd-expander #content',
+                '.ytd-video-secondary-info-renderer #description',
+                'ytd-video-secondary-info-renderer #description',
+                '.description-text',
+                '#meta-contents #description',
+                '#description-text'
+            ];
+            
+            for (const selector of descriptionSelectors) {
+                const descriptionElement = document.querySelector(selector);
+                if (descriptionElement && descriptionElement.textContent?.trim()) {
+                    metadata.description = descriptionElement.textContent.trim();
+                    break;
+                }
             }
             
-            // Extract upload date
-            const dateElement = document.querySelector('#info-strings yt-formatted-string, .ytd-video-primary-info-renderer #info-strings yt-formatted-string');
-            if (dateElement) {
-                metadata.uploadDate = dateElement.textContent?.trim() || '';
+            // Extract upload date using multiple selectors
+            const dateSelectors = [
+                '#info-strings yt-formatted-string',
+                '.ytd-video-primary-info-renderer #info-strings yt-formatted-string',
+                '#info-text',
+                '.ytd-video-primary-info-renderer #info-text',
+                'ytd-video-primary-info-renderer #info-strings'
+            ];
+            
+            for (const selector of dateSelectors) {
+                const dateElement = document.querySelector(selector);
+                if (dateElement && dateElement.textContent?.trim()) {
+                    const dateText = dateElement.textContent.trim();
+                    if (dateText.includes('ago') || dateText.includes('Premiered') || dateText.includes('Streamed')) {
+                        metadata.uploadDate = dateText;
+                        break;
+                    }
+                }
             }
             
             // Extract like/dislike counts if available
-            const likeElement = document.querySelector('button[aria-label*="like"] #text, ytd-toggle-button-renderer #text');
-            if (likeElement) {
-                metadata.likes = likeElement.textContent?.trim() || '';
+            const likeSelectors = [
+                'button[aria-label*="like"] #text',
+                'ytd-toggle-button-renderer #text',
+                'button[aria-label*="Like"] #text',
+                '.ytd-toggle-button-renderer #text'
+            ];
+            
+            for (const selector of likeSelectors) {
+                const likeElement = document.querySelector(selector);
+                if (likeElement && likeElement.textContent?.trim()) {
+                    metadata.likes = likeElement.textContent.trim();
+                    break;
+                }
             }
             
-            // Extract subscriber count
-            const subscriberElement = document.querySelector('#owner-sub-count, ytd-video-owner-renderer #owner-sub-count');
-            if (subscriberElement) {
-                metadata.subscribers = subscriberElement.textContent?.trim() || '';
+            // Extract subscriber count using multiple selectors
+            const subscriberSelectors = [
+                '#owner-sub-count',
+                'ytd-video-owner-renderer #owner-sub-count',
+                '.ytd-video-owner-renderer #owner-sub-count',
+                '#subscriber-count',
+                'ytd-subscribe-button-renderer #subscriber-count'
+            ];
+            
+            for (const selector of subscriberSelectors) {
+                const subscriberElement = document.querySelector(selector);
+                if (subscriberElement && subscriberElement.textContent?.trim()) {
+                    metadata.subscribers = subscriberElement.textContent.trim();
+                    break;
+                }
             }
+            
+            // Extract category/genre if available
+            const categorySelectors = [
+                '#super-title a',
+                '.ytd-video-primary-info-renderer #super-title a',
+                'ytd-badge-supported-renderer'
+            ];
+            
+            for (const selector of categorySelectors) {
+                const categoryElement = document.querySelector(selector);
+                if (categoryElement && categoryElement.textContent?.trim()) {
+                    metadata.category = categoryElement.textContent.trim();
+                    break;
+                }
+            }
+            
+            // Add video URL for reference
+            metadata.videoUrl = window.location.href;
             
         } catch (error) {
             console.error('Error extracting metadata:', error);

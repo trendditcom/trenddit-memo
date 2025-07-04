@@ -174,9 +174,18 @@ function formatYouTubeContent(youtubeData) {
     
     let formatted = `YouTube Video: ${metadata.title || 'Untitled'}\n`;
     formatted += `Channel: ${metadata.author || 'Unknown'}\n`;
+    formatted += `URL: ${metadata.videoUrl || 'Unknown'}\n`;
     formatted += `Duration: ${metadata.duration || 'Unknown'}\n`;
     formatted += `Views: ${metadata.views || 'Unknown'}\n`;
     formatted += `Upload Date: ${metadata.uploadDate || 'Unknown'}\n`;
+    
+    if (metadata.likes) {
+        formatted += `Likes: ${metadata.likes}\n`;
+    }
+    
+    if (metadata.subscribers) {
+        formatted += `Channel Subscribers: ${metadata.subscribers}\n`;
+    }
     
     if (metadata.description) {
         formatted += `\nDescription:\n${metadata.description}\n`;
@@ -185,7 +194,8 @@ function formatYouTubeContent(youtubeData) {
     if (content && content.length > 0) {
         formatted += `\nTranscript:\n${content}\n`;
     } else {
-        formatted += `\nTranscript: Not available\n`;
+        formatted += `\nTranscript: Not available for this video\n`;
+        formatted += `\nNote: Process this YouTube video based on the title, description, and metadata provided above. Create a meaningful summary and analysis even without the transcript.\n`;
     }
     
     return formatted;

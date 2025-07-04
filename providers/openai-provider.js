@@ -147,6 +147,12 @@ Extract key information from the provided HTML content and return a JSON object 
     "selectedTag": "A single relevant tag from: article, research, news, tutorial, reference, documentation, blog, social, product, company, person, event, other"
 }
 
+Special instructions for YouTube content:
+- If transcript is not available, focus on the video title, description, metadata, and channel information
+- Create a meaningful summary based on the available information
+- Do not return generic error messages like "content not accessible"
+- Always provide a substantive analysis based on the YouTube metadata provided
+
 Return only valid JSON without any additional text or formatting.`;
 
         const messages = [

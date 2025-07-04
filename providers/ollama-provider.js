@@ -287,6 +287,12 @@ export class OllamaProvider extends LLMProvider {
         3. Generate structured data
         4. Select the most appropriate tag from the available tags
         
+        Special instructions for YouTube content:
+        - If transcript is not available, focus on the video title, description, metadata, and channel information
+        - Create a meaningful summary based on the available information
+        - Do not return generic error messages like "content not accessible"
+        - Always provide a substantive analysis based on the YouTube metadata provided
+        
         Available tags: ${tags ? tags.map(t => t.name).join(', ') : 'general'}`;
 
         const userMessage = `Process this web content into a memo:
