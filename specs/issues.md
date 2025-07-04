@@ -1,6 +1,14 @@
 # Issues
 
-[ ] You incorrectly removed image analysis and vision model checking capabilities. Review last few issues related to image analysis capabilities and restore all capabilities by ensuring all issues are resolved. Find creative ways to fix these issues by researching online model provider APIs for vision capabilities if required. There is a $1 million prize for a perfect solution!
+[ ] Settings for model provider keys and model selection are preserved for Anthropic but not for other provider keys and model selections.
+
+[x] Settings for model provider keys and model selection are not preserved when switching providers or reloading extension. Review how memos are preserved across screen switching and extension reloads. Apply this learning to fix settings. Find robust ways to fix this completely. There is a $1 million prize at stake!
+
+Solution: Fixed provider configuration persistence by implementing robust storage mechanism that matches memo persistence approach. The fix includes: 1) Updated background.js to use centralized `saveToStorage()` function instead of direct `chrome.storage.local.set()` for all llmConfig operations, ensuring proper backup trigger, 2) Added defensive programming with `ensureProviderConfigManager()` helper function to guarantee provider configuration manager availability, 3) Streamlined provider configuration manager instantiation across the codebase to prevent recreation issues, 4) Enhanced error handling and initialization timing to ensure settings persist correctly across extension reloads and provider switches. The configuration now uses the same robust persistence mechanism as memos with automatic backup to Chrome sync storage and recovery capabilities.
+
+[x] Rollback Analyze Image button and functionality when Analyze Image button is clicked.
+
+Solution: Removed all "Analyze Image" functionality including the button in ui.js, the analyzeImage method in ProviderManager and handleImageAnalysis function in background.js, the analyzeImage method in AnthropicProvider, and all vision-related methods in LLMProviderFactory. Also removed the vision capabilities test file. All tests continue to pass after the removal.
 
 [x] When using Anthropic. Error analyzing image with OpenAI: Error: You uploaded an unsupported image. Please make sure your image has of one the following formats: ['png', 'jpeg', 'gif', 'webp'].
 

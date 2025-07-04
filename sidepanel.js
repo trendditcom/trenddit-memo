@@ -48,6 +48,15 @@ let currentTagFilter = null;
 // Initialize provider configuration manager immediately
 let providerConfigManager = new ProviderConfigManager();
 
+// Helper function to ensure provider config manager is ready
+function ensureProviderConfigManager() {
+    if (!providerConfigManager) {
+        console.log('Creating new ProviderConfigManager instance');
+        providerConfigManager = new ProviderConfigManager();
+    }
+    return providerConfigManager;
+}
+
 // Ollama-specific functions
 async function refreshOllamaModels() {
     console.log('[Ollama Debug] refreshOllamaModels called');
@@ -426,9 +435,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!config) return;
 
             // Save configuration
-            if (!providerConfigManager) {
-                providerConfigManager = new ProviderConfigManager();
-            }
+            providerConfigManager = ensureProviderConfigManager();
             await providerConfigManager.setConfig(config);
             
             // Update background script with new configuration
@@ -461,9 +468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             showStatus('info', 'Testing connection...');
             
-            if (!providerConfigManager) {
-                providerConfigManager = new ProviderConfigManager();
-            }
+            providerConfigManager = ensureProviderConfigManager();
             const result = await providerConfigManager.testProviderConnection(config);
             if (result.success) {
                 showStatus('success', 'Connection test successful!');
@@ -626,9 +631,7 @@ async function initializeProviderSettings() {
         });
 
         // Ensure provider config manager is ready
-        if (!providerConfigManager) {
-            providerConfigManager = new ProviderConfigManager();
-        }
+        providerConfigManager = ensureProviderConfigManager();
         
         // Check for legacy configuration and migrate if needed
         const migrated = await providerConfigManager.migrateFromLegacy();
@@ -774,9 +777,7 @@ async function populateProviderFields(config) {
 async function updateProviderIndicator() {
     try {
         // Ensure provider config manager is ready
-        if (!providerConfigManager) {
-            providerConfigManager = new ProviderConfigManager();
-        }
+        providerConfigManager = ensureProviderConfigManager();
         
         const currentConfig = await providerConfigManager.getCurrentConfig();
         const baseTitle = 'Trenddit Memo';

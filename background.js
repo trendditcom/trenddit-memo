@@ -1,4 +1,5 @@
 import { LLMProviderFactory } from './llm-provider-factory.js';
+import { saveToStorage } from './storage.js';
 
 // Provider manager for handling LLM operations
 class ProviderManager {
@@ -357,9 +358,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Will respond asynchronously
     } else if (request.action === 'setLLMConfig') {
         providerManager.initializeProvider(request.config)
-            .then(() => {
-                // Store the configuration
-                chrome.storage.local.set({ llmConfig: request.config });
+            .then(async () => {
+                // Store the configuration using centralized storage function to trigger backup
+                await saveToStorage('llmConfig', request.config);
                 sendResponse({ success: true });
             })
             .catch(error => {
@@ -374,11 +375,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             apiKey: request.apiKey
         };
         providerManager.initializeProvider(config)
-            .then(() => {
-                chrome.storage.local.set({ 
-                    llmConfig: config,
-                    anthropicApiKey: request.apiKey // Keep for migration
-                });
+            .then(async () => {
+                // Use centralized storage to trigger backup
+                await saveToStorage('llmConfig', config);
+                // Keep legacy key for migration compatibility  
+                await chrome.storage.local.set({ anthropicApiKey: request.apiKey });
                 sendResponse({ success: true });
             })
             .catch(error => {
@@ -455,8 +456,8 @@ chrome.storage.local.get(['llmConfig', 'anthropicApiKey'], async (result) => {
             };
             await providerManager.initializeProvider(config);
             
-            // Save new configuration format
-            chrome.storage.local.set({ llmConfig: config });
+            // Save new configuration format using centralized storage to trigger backup
+            await saveToStorage('llmConfig', config);
         }
     } catch (error) {
         console.error('Failed to initialize provider on startup:', error);
