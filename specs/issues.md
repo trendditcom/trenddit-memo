@@ -1,5 +1,13 @@
 # Issues
 
+[x] Failed to backup all data, trying just tags: Error: Resource::kQuotaBytesPerItem quota exceeded
+
+Solution: Fixed Chrome storage quota exceeded error by implementing a progressive backup strategy with multiple fallback levels. The solution includes: 1) Creating ultra-minimal backup of tags (name and color only) instead of full tag objects with descriptions and SVG icons, 2) Implementing 4 fallback strategies when quota is exceeded: tags + provider config, tags only, provider config only, and chunked tags (5 tags per chunk), 3) Adding proper error handling that only shows error messages when all backup strategies fail, 4) Enhanced recovery system that can restore tags from the new minimal format, chunked format, or legacy format, 5) Comprehensive logging to track which backup strategy succeeds. The backup system now handles the 23 predefined tags efficiently without hitting Chrome's 8KB per-item quota limit.
+
+[x] Since last issue fix I am seeing a notification which says error - failed to create backup
+
+Solution: Fixed the backup error notification issue by improving the error handling logic in the `backupData()` function in storage.js. The function was showing "Failed to create backup" error messages even when the backup partially succeeded (e.g., when backing up just tags due to quota limits). Updated the logic to only show error notifications when the backup truly fails completely, not when it successfully falls back to a partial backup. Added a `backupSuccessful` flag to track the actual backup status and enhanced the fallback logic to properly handle quota-exceeded scenarios without showing false error notifications.
+
 [x] In Tags screen I still see 5 tags listed not 23.
 
 Solution: Fixed the tags initialization issue where existing installations only had 5 tags from an earlier version. Updated the `initializeTags()` function in tags.js to check if all 23 predefined tags are present and add any missing ones. This ensures that users who had the original 5 tags will now see all 23 default tags (including the 18 new productivity tags added in previous updates) without losing their existing tags. The function now properly handles incremental tag updates while preserving user-created tags and existing tag associations with memos.

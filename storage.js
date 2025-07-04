@@ -5,6 +5,8 @@ export async function initializeStorageRecovery() {
     try {
         // Attempt to recover provider config if missing
         await recoverProviderConfig();
+        // Attempt to recover tags if missing
+        await recoverTagsFromBackup();
     } catch (error) {
         console.error('Storage recovery initialization failed:', error);
     }
@@ -95,6 +97,12 @@ export async function backupData() {
             timestamp: chat.timestamp
         }));
         
+        // Create ultra-minimal backup of tags (name and color only)
+        const tagsMeta = tags.map(tag => ({
+            name: tag.name,
+            color: tag.color
+        }));
+        
         // Create minimal backup of provider config (without API keys for security)
         const providerMeta = llmConfig ? {
             type: llmConfig.type,
@@ -104,12 +112,14 @@ export async function backupData() {
             lastUpdated: llmConfig.lastUpdated
         } : null;
         
+        let backupSuccessful = false;
+        
         try {
-            // Try to backup everything
+            // Try to backup everything with minimal data
             const backupData = {
                 memos_meta: memosMeta,
                 chats_meta: chatsMeta,
-                tags
+                tags_meta: tagsMeta
             };
             
             // Add provider config if it exists
@@ -118,10 +128,68 @@ export async function backupData() {
             }
             
             await chrome.storage.sync.set(backupData);
+            backupSuccessful = true;
+            console.log('Backup succeeded with all minimal data');
         } catch (error) {
-            console.warn('Failed to backup all data, trying just tags:', error);
-            // If quota exceeded, just backup tags
-            await chrome.storage.sync.set({ tags });
+            console.warn('Failed to backup all data, trying progressively smaller backups:', error);
+            
+            // Try different fallback strategies
+            const fallbackStrategies = [
+                // Strategy 1: Just tags and provider config
+                async () => {
+                    const data = { tags_meta: tagsMeta };
+                    if (providerMeta) data.provider_meta = providerMeta;
+                    await chrome.storage.sync.set(data);
+                    return 'tags and provider config';
+                },
+                // Strategy 2: Just tags
+                async () => {
+                    await chrome.storage.sync.set({ tags_meta: tagsMeta });
+                    return 'tags only';
+                },
+                // Strategy 3: Just provider config
+                async () => {
+                    if (providerMeta) {
+                        await chrome.storage.sync.set({ provider_meta: providerMeta });
+                        return 'provider config only';
+                    }
+                    throw new Error('No provider config to backup');
+                },
+                // Strategy 4: Split tags into chunks
+                async () => {
+                    const chunkSize = 5; // Backup tags in chunks of 5
+                    const chunks = [];
+                    for (let i = 0; i < tagsMeta.length; i += chunkSize) {
+                        chunks.push(tagsMeta.slice(i, i + chunkSize));
+                    }
+                    
+                    const chunkData = {};
+                    chunks.forEach((chunk, index) => {
+                        chunkData[`tags_chunk_${index}`] = chunk;
+                    });
+                    chunkData.tags_chunk_count = chunks.length;
+                    
+                    await chrome.storage.sync.set(chunkData);
+                    return `tags in ${chunks.length} chunks`;
+                }
+            ];
+            
+            for (const strategy of fallbackStrategies) {
+                try {
+                    const result = await strategy();
+                    backupSuccessful = true;
+                    console.log(`Backup succeeded with ${result} due to quota limits`);
+                    break;
+                } catch (fallbackError) {
+                    console.warn(`Fallback strategy failed:`, fallbackError);
+                    continue;
+                }
+            }
+        }
+        
+        if (!backupSuccessful) {
+            console.error('All backup strategies failed');
+            showStatus('error', 'Failed to create backup');
         }
     } catch (error) {
         console.error('Failed to create backup:', error);
@@ -155,6 +223,53 @@ export async function recoverProviderConfig() {
         return true;
     } catch (error) {
         console.error('Failed to recover provider config:', error);
+        return false;
+    }
+}
+
+// Recover tags from sync storage backup
+export async function recoverTagsFromBackup() {
+    try {
+        const syncResult = await chrome.storage.sync.get(null); // Get all sync storage
+        const localResult = await chrome.storage.local.get(['tags']);
+        
+        // If local tags exist, nothing to recover
+        if (localResult.tags && localResult.tags.length > 0) {
+            return false;
+        }
+        
+        let recoveredTags = [];
+        
+        // Check for tags_meta format (new format)
+        if (syncResult.tags_meta && Array.isArray(syncResult.tags_meta)) {
+            recoveredTags = syncResult.tags_meta;
+        }
+        // Check for chunked tags format
+        else if (syncResult.tags_chunk_count && typeof syncResult.tags_chunk_count === 'number') {
+            for (let i = 0; i < syncResult.tags_chunk_count; i++) {
+                const chunkKey = `tags_chunk_${i}`;
+                if (syncResult[chunkKey] && Array.isArray(syncResult[chunkKey])) {
+                    recoveredTags = recoveredTags.concat(syncResult[chunkKey]);
+                }
+            }
+        }
+        // Check for old tags format (legacy)
+        else if (syncResult.tags && Array.isArray(syncResult.tags)) {
+            recoveredTags = syncResult.tags;
+        }
+        
+        if (recoveredTags.length > 0) {
+            // Restore basic tag structure (name and color only from backup)
+            // The full tag data will be restored when initializeTags() runs
+            await saveToStorage('tags', recoveredTags);
+            console.log(`Recovered ${recoveredTags.length} tags from backup`);
+            showStatus('success', `Recovered ${recoveredTags.length} tags from backup`);
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Failed to recover tags from backup:', error);
         return false;
     }
 } 
