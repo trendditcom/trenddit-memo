@@ -592,6 +592,23 @@ chrome.runtime.onMessage.addListener((message) => {
         loadMemos(); // Refresh the memo list
         showStatus('success', message.message || 'Memo updated successfully');
         resetMemoButton();
+        
+        // If memo detail view is currently shown, refresh it
+        const memoDetailView = document.getElementById('memoDetailView');
+        if (memoDetailView && !memoDetailView.classList.contains('hidden')) {
+            // Get the current memo ID from the URL or a stored reference
+            const currentMemoTitle = document.getElementById('memoTitle')?.textContent;
+            if (currentMemoTitle) {
+                // Find the updated memo and refresh the detail view
+                chrome.storage.local.get(['memos'], (result) => {
+                    const memos = result.memos || [];
+                    const updatedMemo = memos.find(m => m.title === currentMemoTitle);
+                    if (updatedMemo) {
+                        displayMemoDetail(updatedMemo);
+                    }
+                });
+            }
+        }
     }
 });
 

@@ -217,22 +217,26 @@ export async function displayMemoDetail(memo, tags) {
             memoSummaryElement.parentNode.insertBefore(thumbnailContainer, memoSummaryElement);
         }
         
-        // Add transcript capture button for YouTube memos
-        const transcriptButton = document.createElement('button');
-        transcriptButton.className = 'youtube-transcript-button mb-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200';
-        transcriptButton.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-            </svg>
-            <span>Capture Transcript</span>
-        `;
+        // Add transcript capture button for YouTube memos only if transcript hasn't been added yet
+        const hasTranscript = memo.structuredData?.transcriptAdded === true;
         
-        transcriptButton.addEventListener('click', () => {
-            captureYouTubeTranscript(memo);
-        });
-        
-        // Insert transcript button before summary
-        memoSummaryElement.parentNode.insertBefore(transcriptButton, memoSummaryElement);
+        if (!hasTranscript) {
+            const transcriptButton = document.createElement('button');
+            transcriptButton.className = 'youtube-transcript-button mb-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200';
+            transcriptButton.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z"/>
+                </svg>
+                <span>Capture Transcript</span>
+            `;
+            
+            transcriptButton.addEventListener('click', () => {
+                captureYouTubeTranscript(memo);
+            });
+            
+            // Insert transcript button before summary
+            memoSummaryElement.parentNode.insertBefore(transcriptButton, memoSummaryElement);
+        }
     }
     
     memoSummaryElement.textContent = memo.summary;

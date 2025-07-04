@@ -1,5 +1,9 @@
 # Issues
 
+[x] When using capture transcript button once transcript is successfully added to the memo always hide the capture transcript button after that point for that memo.
+
+Solution: Fixed by implementing transcript status tracking in the memo data structure. When a transcript is successfully captured, the `transcriptAdded: true` flag is set in the memo's `structuredData`. Modified the `displayMemoDetail` function in ui.js to check this flag and only show the "Capture Transcript" button for YouTube memos that don't already have a transcript. Additionally, enhanced the `memoUpdated` message handler in sidepanel.js to refresh the current memo detail view when a transcript is successfully added, ensuring the button is hidden immediately after successful capture.
+
 [x] When capturing transcript on a youtube memo the processing notification keeps running, then after some time a browser modal dialog appears saying transcript is added to memo. The memo source content length does not seem to change. Only use sidepanel notification not browser modal to update status of memo capture. Fix why processing goes on forever and transcript is not added to the memo as expected.
 
 Solution: Fixed YouTube transcript capture notification and processing issues by: 1) Replaced all browser modal alerts (`alert()`) in the transcript capture function with runtime messages to show sidepanel notifications, 2) Added proper processing status notification when transcript capture begins, 3) Enhanced error handling to send appropriate error messages to sidepanel instead of browser modals, 4) Added 'memoUpdated' action handler in sidepanel to properly handle transcript update success messages, 5) Ensured proper status clearing and UI reset after transcript processing completes or fails. The system now uses only sidepanel notifications and provides proper feedback during transcript processing without infinite processing states.
