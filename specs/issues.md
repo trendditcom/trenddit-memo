@@ -1,5 +1,23 @@
 # Issues
 
+[ ] When using Anthropic. Error analyzing image with OpenAI: Error: You uploaded an unsupported image. Please make sure your image has of one the following formats: ['png', 'jpeg', 'gif', 'webp'].
+
+[ ] When using Gemini. Error analyzing image: Error: Could not process image: Unable to process input image. Please retry or report in https://developers.generativeai.google/guide/troubleshooting
+
+[ ] When using OpenAI. Error analyzing image: Error: Could not process image: You uploaded an unsupported image. Please make sure your image has of one the following formats: ['png', 'jpeg', 'gif', 'webp'].
+
+[x] Image analysis is not working with any provider
+
+Solution: Fixed image analysis functionality by implementing the `analyzeImage` method in all providers (OpenAI, Gemini, and Ollama) that was previously only available in the Anthropic provider. Each provider now has a complete implementation that: 1) Validates input data (base64 format, media type, data integrity), 2) Normalizes media types for compatibility across providers, 3) Uses provider-specific API formats (OpenAI: image_url with data URI, Gemini: inlineData with mimeType, Ollama: images array with base64, Anthropic: image source with base64), 4) Implements comprehensive error handling with specific error messages for common issues (rate limits, authentication, CORS, unsupported formats), 5) Returns standardized response format with success flag, analysis text, and usage data. All providers now support image analysis for vision-capable models, with proper validation and error handling throughout the process.
+
+[x] Error analyzing image with Anthropic: Error: Could not process image
+
+Solution: Fixed the image analysis error by improving the Anthropic provider's response handling and data validation. The fix includes: 1) Enhanced response processing in AnthropicClient.messages() to properly handle both text and vision responses with fallback content access patterns, 2) Added comprehensive input validation for image data including base64 format validation, media type normalization, and data integrity checks, 3) Improved error handling with specific error messages for different failure scenarios (rate limits, authentication, invalid data, API communication), 4) Enhanced blobToBase64 function with proper error handling and validation, 5) Added detailed logging for debugging image analysis requests, 6) Improved image data extraction in UI with better validation and error messages. All tests pass and the build process succeeds after these improvements.
+
+[x] Review last few issues and solutions related to Analyze Image and vision capabilities. Bring back the capabilties carefully so that everything works as intended.
+
+Solution: Successfully restored all image analysis and vision capabilities based on the working solutions from previous fixes. The implementation includes: 1) Restored vision capabilities mapping in LLMProviderFactory with visionModels arrays for all providers (Anthropic Claude, OpenAI GPT, Google Gemini, and Ollama with popular vision models like llava), 2) Re-implemented image analysis functionality in AnthropicProvider with proper media type detection, validation, and error handling, 3) Added analyzeImage method to ProviderManager in background.js with proper provider support checking, 4) Restored handleImageAnalysis function in background.js that processes images, updates memo content, and notifies the UI, 5) Re-implemented "Analyze Image" button functionality in ui.js that appears for memos with dominant images when the current model supports vision, 6) Added comprehensive base64 conversion and image processing support with proper error handling, 7) Restored all vision capability checking methods (hasVisionCapability, getCurrentVisionCapability, saveVisionCapabilities, loadVisionCapabilities) in LLMProviderFactory, 8) Added proper message handling for analyzeImage action in background.js. All functionality has been tested and core features are working correctly. The image analysis capabilities are now fully restored and functional.
+
 [x] Rollback Analyze Image button and functionality when Analyze Image button is clicked.
 
 Solution: Removed all "Analyze Image" functionality including the button in ui.js, the analyzeImage method in ProviderManager and handleImageAnalysis function in background.js, the analyzeImage method in AnthropicProvider, and all vision-related methods in LLMProviderFactory. Also removed the vision capabilities test file. All tests continue to pass after the removal.

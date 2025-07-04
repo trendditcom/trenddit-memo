@@ -251,4 +251,122 @@ export class OpenAIProvider extends LLMProvider {
 
         return true;
     }
+
+    async analyzeImage(imageData, prompt = "Explain what this image is about") {
+        if (!this.initialized) {
+            throw new Error('Provider not initialized');
+        }
+
+        try {
+            // Validate input data
+            if (!imageData || typeof imageData !== 'object') {
+                throw new Error('Invalid image data provided');
+            }
+
+            // Validate base64 data
+            if (!imageData.base64 || typeof imageData.base64 !== 'string') {
+                throw new Error('No base64 image data provided');
+            }
+
+            // Validate base64 format
+            const base64Regex = /^[A-Za-z0-9+/]+=*$/;
+            if (!base64Regex.test(imageData.base64)) {
+                throw new Error('Invalid base64 format');
+            }
+
+            // Normalize media type
+            let mediaType = imageData.mediaType || 'image/jpeg';
+            mediaType = this.normalizeMediaType(mediaType);
+            
+            // Validate media type
+            const acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!acceptedTypes.includes(mediaType)) {
+                console.warn(`Unsupported media type: ${mediaType}, defaulting to image/jpeg`);
+                mediaType = 'image/jpeg';
+            }
+
+            console.log(`Analyzing image with OpenAI - media type: ${mediaType}, base64 length: ${imageData.base64.length}`);
+
+            const response = await fetch(`${this.baseUrl}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    max_tokens: 1024,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: prompt
+                                },
+                                {
+                                    type: 'image_url',
+                                    image_url: {
+                                        url: `data:${mediaType};base64,${imageData.base64}`
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'OpenAI API request failed');
+            }
+
+            const data = await response.json();
+            
+            if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                throw new Error('Invalid response from OpenAI API');
+            }
+
+            return {
+                success: true,
+                analysis: data.choices[0].message.content,
+                usage: data.usage
+            };
+
+        } catch (error) {
+            console.error('Error analyzing image with OpenAI:', error);
+            
+            // Provide specific error messages for common issues
+            if (error.message.includes('rate limit')) {
+                throw new Error('Rate limit exceeded. Please try again later.');
+            } else if (error.message.includes('quota')) {
+                throw new Error('API quota exceeded. Please check your usage.');
+            } else if (error.message.includes('authentication') || error.message.includes('Unauthorized')) {
+                throw new Error('Authentication failed. Please check your API key.');
+            } else if (error.message.includes('Invalid image')) {
+                throw new Error('Unsupported image format. Please use JPEG, PNG, GIF, or WebP.');
+            } else if (error.message.includes('Invalid base64')) {
+                throw new Error('Invalid image data format. Please try again.');
+            } else if (error.message.includes('API request failed')) {
+                throw new Error('Failed to communicate with OpenAI API. Please check your connection.');
+            } else {
+                throw new Error(`Could not process image: ${error.message}`);
+            }
+        }
+    }
+
+    // Normalize media type for compatibility
+    normalizeMediaType(mediaType) {
+        if (!mediaType) return 'image/jpeg';
+        
+        // Remove parameters like charset
+        mediaType = mediaType.split(';')[0].toLowerCase().trim();
+        
+        // Normalize variations
+        if (mediaType === 'image/jpg') {
+            return 'image/jpeg';
+        }
+        
+        return mediaType;
+    }
 }

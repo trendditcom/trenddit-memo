@@ -295,7 +295,12 @@ export async function displayMemoDetail(memo, tags, setCurrentMemo) {
         // Insert image before summary
         memoSummaryElement.parentNode.insertBefore(imageContainer, memoSummaryElement);
         
-        // Note: Image analysis functionality has been removed
+        // Add analyze image button if image hasn't been analyzed yet and current model supports vision
+        const hasAnalysis = memo.structuredData?.imageAnalysis;
+        
+        if (!hasAnalysis) {
+            checkAndAddAnalyzeButton(memo, dominantImage, imageContainer);
+        }
     }
     
     memoSummaryElement.textContent = memo.summary;
@@ -527,4 +532,163 @@ async function captureYouTubeTranscript(memo) {
     }
 }
 
-// Note: Image analysis functionality has been removed 
+// Check if current model supports vision and add analyze button if needed
+async function checkAndAddAnalyzeButton(memo, imageData, container) {
+    try {
+        // Check if current model has vision capabilities
+        const hasVision = await LLMProviderFactory.getCurrentVisionCapability();
+        
+        if (hasVision) {
+            addAnalyzeImageButton(memo, imageData, container);
+        }
+    } catch (error) {
+        console.error('Error checking vision capabilities:', error);
+    }
+}
+
+// Add analyze image button to the image container
+function addAnalyzeImageButton(memo, imageData, container) {
+    const analyzeButton = document.createElement('button');
+    analyzeButton.className = 'mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded text-sm transition-colors duration-200';
+    analyzeButton.textContent = 'Analyze Image';
+    
+    analyzeButton.addEventListener('click', () => {
+        analyzeImage(memo, imageData, analyzeButton);
+    });
+    
+    container.appendChild(analyzeButton);
+}
+
+// Analyze image using current provider
+async function analyzeImage(memo, imageData, button) {
+    const originalText = button.textContent;
+    button.textContent = 'Analyzing...';
+    button.disabled = true;
+    
+    try {
+        showStatus('info', 'Analyzing image...');
+        
+        // Convert image src to base64 if needed
+        let base64Data = '';
+        let mediaType = 'image/jpeg';
+        
+        if (imageData.src.startsWith('data:')) {
+            // Extract base64 and media type from data URL
+            const matches = imageData.src.match(/^data:([^;]+);base64,(.+)$/);
+            if (matches) {
+                mediaType = matches[1];
+                base64Data = matches[2];
+                
+                // Validate extracted data
+                if (!mediaType || !base64Data) {
+                    throw new Error('Invalid data URL: missing media type or base64 data');
+                }
+            } else {
+                throw new Error('Invalid data URL format');
+            }
+        } else {
+            // Fetch image and convert to base64
+            try {
+                const response = await fetch(imageData.src);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                }
+                
+                const blob = await response.blob();
+                if (!blob || blob.size === 0) {
+                    throw new Error('Received empty image data');
+                }
+                
+                mediaType = blob.type || 'image/jpeg';
+                
+                // Validate media type
+                if (!mediaType.startsWith('image/')) {
+                    throw new Error('Fetched content is not an image');
+                }
+                
+                base64Data = await blobToBase64(blob);
+            } catch (fetchError) {
+                throw new Error(`Failed to fetch image: ${fetchError.message}`);
+            }
+        }
+        
+        // Final validation of extracted data
+        if (!base64Data || base64Data.length === 0) {
+            throw new Error('No image data extracted');
+        }
+        
+        console.log(`Image analysis: media type ${mediaType}, base64 length: ${base64Data.length}`);
+        
+        // Send to background script for analysis
+        const response = await chrome.runtime.sendMessage({
+            action: 'analyzeImage',
+            data: {
+                memoId: memo.id,
+                imageData: {
+                    base64: base64Data,
+                    mediaType: mediaType
+                },
+                prompt: 'Explain what this image is about'
+            }
+        });
+        
+        if (response.success) {
+            showStatus('success', 'Image analyzed successfully');
+            // Remove the analyze button
+            button.remove();
+        } else {
+            throw new Error(response.error || 'Analysis failed');
+        }
+        
+    } catch (error) {
+        console.error('Error analyzing image:', error);
+        showStatus('error', `Analysis failed: ${error.message}`);
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+// Convert blob to base64
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        if (!blob || typeof blob.size !== 'number') {
+            reject(new Error('Invalid blob provided'));
+            return;
+        }
+        
+        if (blob.size === 0) {
+            reject(new Error('Empty blob provided'));
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const result = reader.result;
+                if (!result || typeof result !== 'string') {
+                    reject(new Error('Failed to read blob as data URL'));
+                    return;
+                }
+                
+                // Check if result is a valid data URL
+                if (!result.startsWith('data:')) {
+                    reject(new Error('Invalid data URL format'));
+                    return;
+                }
+                
+                // Remove the data URL prefix to get just the base64 data
+                const base64 = result.split(',')[1];
+                if (!base64) {
+                    reject(new Error('No base64 data found in result'));
+                    return;
+                }
+                
+                resolve(base64);
+            } catch (error) {
+                reject(new Error(`Failed to process blob: ${error.message}`));
+            }
+        };
+        reader.onerror = () => reject(new Error('Failed to read blob'));
+        reader.readAsDataURL(blob);
+    });
+} 
