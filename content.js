@@ -93,6 +93,40 @@ if (!window.avnamMemoInitialized) {
                 });
             }
             return true; // Keep the message channel open for async response
+        } else if (request.action === 'captureTranscript') {
+            // Handle transcript capture for existing memo
+            if (isYouTubePage()) {
+                window.avnamMemo.transcriptCaptureMemoId = request.memoId;
+                window.avnamMemo.isTranscriptCaptureMode = true;
+                window.avnamMemo.isHighlightMode = true;
+                document.body.style.cursor = 'crosshair';
+                
+                // Add visual indicator for transcript capture mode
+                const indicator = document.createElement('div');
+                indicator.id = 'transcript-capture-indicator';
+                indicator.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: #ef4444;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    z-index: 2147483647;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                `;
+                indicator.textContent = 'Transcript Capture Mode - Click on transcript text';
+                document.body.appendChild(indicator);
+                
+                sendResponse({ success: true });
+            } else {
+                sendResponse({
+                    success: false,
+                    error: 'Not a YouTube page'
+                });
+            }
+            return true;
         }
     });
 
@@ -195,8 +229,11 @@ if (!window.avnamMemoInitialized) {
             action: 'savingMemo'
         });
         
-        // Check if this is a YouTube page and handle accordingly
-        if (isYouTubePage()) {
+        // Check if this is transcript capture mode
+        if (window.avnamMemo.isTranscriptCaptureMode && isYouTubePage()) {
+            // Handle transcript capture for existing memo
+            handleTranscriptCapture(element, window.avnamMemo.transcriptCaptureMemoId);
+        } else if (isYouTubePage() && !window.avnamMemo.isTranscriptCaptureMode) {
             // For YouTube pages, extract video content instead of selected element
             handleYouTubeContent();
         } else {
@@ -271,19 +308,93 @@ if (!window.avnamMemoInitialized) {
         });
     }
 
+    function handleTranscriptCapture(element, memoId) {
+        try {
+            // Extract transcript text from the selected element
+            const transcriptText = element.textContent || element.innerText || '';
+            
+            if (!transcriptText.trim()) {
+                alert('No text content found in selected element. Please select transcript text.');
+                return;
+            }
+            
+            // Clean up the transcript text
+            const cleanedTranscript = transcriptText
+                .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+                .replace(/[\n\r\t]/g, ' ')  // Replace newlines and tabs with spaces
+                .trim();
+            
+            console.log('Captured transcript text:', cleanedTranscript.substring(0, 100) + '...');
+            
+            // Send transcript data to background script to update existing memo
+            chrome.runtime.sendMessage({
+                action: 'updateMemoWithTranscript',
+                data: {
+                    memoId: memoId,
+                    transcriptText: cleanedTranscript
+                }
+            }, (response) => {
+                // Reset transcript capture mode
+                window.avnamMemo.isTranscriptCaptureMode = false;
+                window.avnamMemo.isHighlightMode = false;
+                window.avnamMemo.transcriptCaptureMemoId = null;
+                document.body.style.cursor = 'default';
+                
+                // Remove transcript capture indicator
+                const indicator = document.getElementById('transcript-capture-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+                
+                // Remove highlight from element
+                if (window.avnamMemo.highlightedElement) {
+                    window.avnamMemo.highlightedElement.classList.remove('highlight-outline');
+                    window.avnamMemo.highlightedElement = null;
+                }
+                
+                if (!response) {
+                    console.error('No response received from background script');
+                    alert('Failed to update memo with transcript. Please try again.');
+                    return;
+                }
+                
+                if (response.success) {
+                    alert('Transcript successfully added to memo!');
+                } else {
+                    console.error('Failed to update memo with transcript:', response.error || 'Unknown error');
+                    alert('Failed to update memo with transcript. Please try again.');
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error capturing transcript:', error);
+            alert('Failed to capture transcript. Please try again.');
+            
+            // Reset transcript capture mode on error
+            window.avnamMemo.isTranscriptCaptureMode = false;
+            window.avnamMemo.isHighlightMode = false;
+            window.avnamMemo.transcriptCaptureMemoId = null;
+            document.body.style.cursor = 'default';
+            
+            const indicator = document.getElementById('transcript-capture-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+    }
+
     // YouTube content extraction function
     async function extractYouTubeContent() {
         try {
             const metadata = await extractYouTubeMetadata();
-            const transcript = await extractYouTubeTranscript();
             const videoUrl = extractYouTubeVideoUrl();
             
             return {
                 platform: 'youtube',
-                content: transcript.content,
+                content: '', // No automatic transcript extraction
                 metadata: {
                     ...metadata,
-                    transcriptAvailable: transcript.available,
+                    transcriptAvailable: false, // Manual transcript capture only
                     videoUrl: videoUrl
                 },
                 mediaUrls: videoUrl ? [videoUrl] : []
@@ -507,299 +618,6 @@ if (!window.avnamMemoInitialized) {
         return metadata;
     }
 
-    async function extractYouTubeTranscript() {
-        try {
-            const videoId = extractYouTubeVideoId(window.location.href);
-            
-            if (!videoId) {
-                return {
-                    available: false,
-                    content: '',
-                    error: 'Could not extract video ID'
-                };
-            }
-            
-            console.log('Fetching transcript for video:', videoId);
-            
-            // Use video.google.com API to get transcript over HTTPS
-            const transcriptUrl = `https://video.google.com/timedtext?lang=en&v=${videoId}`;
-            
-            try {
-                // Fetch the transcript using the API
-                const response = await fetch(transcriptUrl);
-                
-                if (!response.ok) {
-                    console.log('Transcript not available from API, trying alternate languages');
-                    // Try alternate language codes if English is not available
-                    const altLangs = ['en-US', 'en-GB'];
-                    for (const lang of altLangs) {
-                        const altUrl = `https://video.google.com/timedtext?lang=${lang}&v=${videoId}`;
-                        const altResponse = await fetch(altUrl);
-                        if (altResponse.ok) {
-                            const xmlText = await altResponse.text();
-                            const transcript = parseTranscriptXML(xmlText);
-                            return {
-                                available: true,
-                                content: transcript,
-                                language: lang
-                            };
-                        }
-                    }
-                    
-                    // If API doesn't work, fall back to DOM parsing
-                    return await extractTranscriptFromDOM();
-                }
-                
-                const xmlText = await response.text();
-                const transcript = parseTranscriptXML(xmlText);
-                
-                return {
-                    available: true,
-                    content: transcript,
-                    language: 'en'
-                };
-                
-            } catch (apiError) {
-                console.log('API transcript fetch failed, falling back to DOM parsing:', apiError);
-                // Fall back to DOM parsing if API fails
-                return await extractTranscriptFromDOM();
-            }
-            
-        } catch (error) {
-            console.error('Error extracting transcript:', error);
-            return {
-                available: false,
-                content: '',
-                error: error.message
-            };
-        }
-    }
-    
-    // Helper function to parse transcript XML
-    function parseTranscriptXML(xmlText) {
-        try {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(xmlText, 'text/xml');
-            const textElements = doc.querySelectorAll('text');
-            
-            const transcript = Array.from(textElements)
-                .map(element => {
-                    const text = element.textContent?.trim() || '';
-                    // Decode HTML entities
-                    const textarea = document.createElement('textarea');
-                    textarea.innerHTML = text;
-                    return textarea.value;
-                })
-                .filter(text => text.length > 0)
-                .join(' ');
-            
-            return transcript;
-        } catch (error) {
-            console.error('Error parsing transcript XML:', error);
-            return '';
-        }
-    }
-    
-    // Fallback function to extract transcript from DOM
-    async function extractTranscriptFromDOM() {
-        try {
-            console.log('Attempting DOM-based transcript extraction...');
-            
-            // First, ensure the description section is expanded
-            await expandDescriptionSection();
-            
-            // Wait a bit for the description to expand
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Try multiple approaches to find the transcript button
-            const transcriptButton = await findTranscriptButton();
-            
-            if (transcriptButton) {
-                console.log('Found transcript button, clicking...');
-                
-                // Click the button to open transcript
-                transcriptButton.click();
-                
-                // Wait for transcript panel to load with multiple possible selectors
-                const transcriptPanel = await waitForTranscriptPanel();
-                
-                if (transcriptPanel) {
-                    console.log('Transcript panel loaded, extracting text...');
-                    
-                    // Extract transcript text using multiple approaches
-                    const transcript = await extractTranscriptText(transcriptPanel);
-                    
-                    if (transcript && transcript.length > 0) {
-                        console.log('Successfully extracted transcript from DOM');
-                        return {
-                            available: true,
-                            content: transcript,
-                            source: 'DOM'
-                        };
-                    }
-                }
-            }
-            
-            console.log('No transcript found via DOM extraction');
-            return {
-                available: false,
-                content: '',
-                source: 'DOM'
-            };
-            
-        } catch (error) {
-            console.error('Error extracting transcript from DOM:', error);
-            return {
-                available: false,
-                content: '',
-                error: error.message,
-                source: 'DOM'
-            };
-        }
-    }
-    
-    // Helper function to expand the description section
-    async function expandDescriptionSection() {
-        try {
-            // Look for "Show more" button in description
-            const showMoreButton = document.querySelector('#description-inline-expander button, #expand button, [aria-label*="Show more"], [aria-label*="more"]');
-            
-            if (showMoreButton && showMoreButton.textContent.includes('more')) {
-                console.log('Expanding description section...');
-                showMoreButton.click();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        } catch (error) {
-            console.log('Could not expand description section:', error);
-        }
-    }
-    
-    // Helper function to find transcript button with multiple approaches
-    async function findTranscriptButton() {
-        const selectors = [
-            // Modern YouTube transcript button selectors
-            'button[aria-label*="Show transcript"]',
-            'button[aria-label*="transcript"]',
-            'button[aria-label*="Transcript"]',
-            'button[aria-label*="Show video transcript"]',
-            'button[aria-label*="Open transcript"]',
-            // Generic selectors for transcript buttons
-            'button:has-text("Show transcript")',
-            'button:has-text("Transcript")',
-            '[data-tooltip-text*="transcript"]',
-            '[data-tooltip-text*="Transcript"]',
-            // CSS selectors for transcript elements
-            'ytd-transcript-engagement-panel-renderer button',
-            'ytd-engagement-panel-section-list-renderer button[aria-label*="transcript"]',
-            // Look for buttons in the description area
-            '#description button[aria-label*="transcript"]',
-            '#description-inline-expander button[aria-label*="transcript"]',
-            '#meta-contents button[aria-label*="transcript"]'
-        ];
-        
-        for (const selector of selectors) {
-            try {
-                const button = document.querySelector(selector);
-                if (button && button.offsetParent !== null) { // Check if button is visible
-                    console.log(`Found transcript button using selector: ${selector}`);
-                    return button;
-                }
-            } catch (error) {
-                // Continue to next selector
-            }
-        }
-        
-        // If direct selectors fail, try text-based search
-        const allButtons = document.querySelectorAll('button');
-        for (const button of allButtons) {
-            const text = button.textContent?.toLowerCase() || '';
-            const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
-            const tooltip = button.getAttribute('data-tooltip-text')?.toLowerCase() || '';
-            
-            if (text.includes('transcript') || ariaLabel.includes('transcript') || tooltip.includes('transcript')) {
-                console.log('Found transcript button via text search');
-                return button;
-            }
-        }
-        
-        return null;
-    }
-    
-    // Helper function to wait for transcript panel to load
-    async function waitForTranscriptPanel() {
-        const selectors = [
-            // Modern YouTube transcript panel selectors
-            'ytd-transcript-body-renderer',
-            'ytd-transcript-segment-renderer',
-            '.ytd-transcript-segment-renderer',
-            'ytd-transcript-segment-list-renderer',
-            '[data-transcript-body]',
-            // Generic transcript content selectors
-            '[aria-label*="transcript"]',
-            '.transcript-content',
-            '.transcript-text',
-            '.transcript-segment'
-        ];
-        
-        for (const selector of selectors) {
-            const elements = await waitForElements(selector, 3000);
-            if (elements.length > 0) {
-                console.log(`Found transcript panel using selector: ${selector}`);
-                return elements[0];
-            }
-        }
-        
-        return null;
-    }
-    
-    // Helper function to extract transcript text from the panel
-    async function extractTranscriptText(transcriptPanel) {
-        try {
-            const extractionMethods = [
-                // Method 1: Extract from transcript segments
-                () => {
-                    const segments = transcriptPanel.querySelectorAll('ytd-transcript-segment-renderer, .ytd-transcript-segment-renderer, .transcript-segment');
-                    if (segments.length > 0) {
-                        return Array.from(segments)
-                            .map(segment => {
-                                // Try multiple ways to get text content
-                                const textElement = segment.querySelector('.segment-text, .transcript-text, [class*="text"]') || segment;
-                                return textElement.textContent?.trim() || '';
-                            })
-                            .filter(text => text.length > 0)
-                            .join('\n');
-                    }
-                    return '';
-                },
-                
-                // Method 2: Extract from transcript body
-                () => {
-                    const body = transcriptPanel.querySelector('ytd-transcript-body-renderer, .transcript-body, [data-transcript-body]');
-                    if (body) {
-                        return body.textContent?.trim() || '';
-                    }
-                    return '';
-                },
-                
-                // Method 3: Extract all text from the panel
-                () => {
-                    return transcriptPanel.textContent?.trim() || '';
-                }
-            ];
-            
-            for (const method of extractionMethods) {
-                const result = method();
-                if (result && result.length > 50) { // Ensure we have substantial content
-                    return result;
-                }
-            }
-            
-            return '';
-        } catch (error) {
-            console.error('Error extracting transcript text:', error);
-            return '';
-        }
-    }
 
     function extractYouTubeVideoUrl() {
         try {

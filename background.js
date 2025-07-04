@@ -201,6 +201,78 @@ function formatYouTubeContent(youtubeData) {
     return formatted;
 }
 
+// Handle updating existing memo with transcript
+async function handleMemoTranscriptUpdate(updateData) {
+    try {
+        const { memoId, transcriptText } = updateData;
+        
+        console.log('Updating memo with transcript:', memoId, transcriptText.substring(0, 100) + '...');
+        
+        // Get current memos
+        const result = await chrome.storage.local.get(['memos']);
+        const memos = result.memos || [];
+        
+        // Find the memo to update
+        const memoIndex = memos.findIndex(m => m.id === memoId);
+        if (memoIndex === -1) {
+            throw new Error('Memo not found');
+        }
+        
+        const memo = memos[memoIndex];
+        
+        // Add transcript to source content
+        const updatedSourceHtml = memo.sourceHtml + `\n\nTranscript:\n${transcriptText}`;
+        
+        // Get tags for processing
+        const tagsResult = await chrome.storage.local.get(['tags']);
+        const tags = tagsResult.tags || [];
+        
+        // Reprocess the memo with the updated content including transcript
+        const processedContent = await providerManager.processMemo(updatedSourceHtml, {
+            url: memo.url,
+            tags: tags,
+            platform: memo.platform || 'youtube'
+        });
+        
+        console.log('Reprocessed memo with transcript:', processedContent);
+        
+        // Update the memo with new processed content
+        const updatedMemo = {
+            ...memo,
+            sourceHtml: updatedSourceHtml,
+            title: processedContent.title || memo.title,
+            summary: processedContent.summary || memo.summary,
+            narrative: processedContent.narrative || memo.narrative,
+            structuredData: {
+                ...memo.structuredData,
+                ...processedContent.structuredData,
+                transcriptAdded: true,
+                transcriptLength: transcriptText.length
+            },
+            tag: processedContent.selectedTag || memo.tag,
+            lastUpdated: Date.now()
+        };
+        
+        // Update memos array
+        memos[memoIndex] = updatedMemo;
+        
+        // Save updated memos
+        await chrome.storage.local.set({ memos });
+        
+        // Notify side panel about the update
+        chrome.runtime.sendMessage({ 
+            action: 'memoUpdated', 
+            memo: updatedMemo 
+        });
+        
+        console.log('Successfully updated memo with transcript');
+        
+    } catch (error) {
+        console.error('Error updating memo with transcript:', error);
+        throw error;
+    }
+}
+
 // Handle new memo creation
 async function handleMemo(memoData) {
     try {
@@ -354,6 +426,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     error: error.message 
                 });
             });
+        return true; // Will respond asynchronously
+    } else if (request.action === 'updateMemoWithTranscript') {
+        // Handle updating existing memo with transcript
+        handleMemoTranscriptUpdate(request.data)
+            .then(() => sendResponse({ success: true }))
+            .catch(error => sendResponse({ success: false, error: error.message }));
         return true; // Will respond asynchronously
     }
 });
