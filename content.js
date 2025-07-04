@@ -472,33 +472,44 @@ if (!window.avnamMemoInitialized) {
     // Fallback function to extract transcript from DOM
     async function extractTranscriptFromDOM() {
         try {
-            // Try to find and click the transcript button
-            const transcriptButton = document.querySelector('button[aria-label*="transcript"], button[aria-label*="Transcript"], button[aria-label*="Show transcript"]');
+            console.log('Attempting DOM-based transcript extraction...');
+            
+            // First, ensure the description section is expanded
+            await expandDescriptionSection();
+            
+            // Wait a bit for the description to expand
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Try multiple approaches to find the transcript button
+            const transcriptButton = await findTranscriptButton();
             
             if (transcriptButton) {
+                console.log('Found transcript button, clicking...');
+                
                 // Click the button to open transcript
                 transcriptButton.click();
                 
-                // Wait for transcript to load
-                await waitForElements('.ytd-transcript-segment-renderer, ytd-transcript-segment-renderer', 2000);
+                // Wait for transcript panel to load with multiple possible selectors
+                const transcriptPanel = await waitForTranscriptPanel();
                 
-                // Extract transcript segments
-                const transcriptSegments = document.querySelectorAll('.ytd-transcript-segment-renderer, ytd-transcript-segment-renderer .segment-text');
-                
-                if (transcriptSegments.length > 0) {
-                    const transcript = Array.from(transcriptSegments)
-                        .map(segment => segment.textContent?.trim())
-                        .filter(text => text && text.length > 0)
-                        .join('\n');
+                if (transcriptPanel) {
+                    console.log('Transcript panel loaded, extracting text...');
                     
-                    return {
-                        available: true,
-                        content: transcript,
-                        source: 'DOM'
-                    };
+                    // Extract transcript text using multiple approaches
+                    const transcript = await extractTranscriptText(transcriptPanel);
+                    
+                    if (transcript && transcript.length > 0) {
+                        console.log('Successfully extracted transcript from DOM');
+                        return {
+                            available: true,
+                            content: transcript,
+                            source: 'DOM'
+                        };
+                    }
                 }
             }
             
+            console.log('No transcript found via DOM extraction');
             return {
                 available: false,
                 content: '',
@@ -513,6 +524,149 @@ if (!window.avnamMemoInitialized) {
                 error: error.message,
                 source: 'DOM'
             };
+        }
+    }
+    
+    // Helper function to expand the description section
+    async function expandDescriptionSection() {
+        try {
+            // Look for "Show more" button in description
+            const showMoreButton = document.querySelector('#description-inline-expander button, #expand button, [aria-label*="Show more"], [aria-label*="more"]');
+            
+            if (showMoreButton && showMoreButton.textContent.includes('more')) {
+                console.log('Expanding description section...');
+                showMoreButton.click();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } catch (error) {
+            console.log('Could not expand description section:', error);
+        }
+    }
+    
+    // Helper function to find transcript button with multiple approaches
+    async function findTranscriptButton() {
+        const selectors = [
+            // Modern YouTube transcript button selectors
+            'button[aria-label*="Show transcript"]',
+            'button[aria-label*="transcript"]',
+            'button[aria-label*="Transcript"]',
+            'button[aria-label*="Show video transcript"]',
+            'button[aria-label*="Open transcript"]',
+            // Generic selectors for transcript buttons
+            'button:has-text("Show transcript")',
+            'button:has-text("Transcript")',
+            '[data-tooltip-text*="transcript"]',
+            '[data-tooltip-text*="Transcript"]',
+            // CSS selectors for transcript elements
+            'ytd-transcript-engagement-panel-renderer button',
+            'ytd-engagement-panel-section-list-renderer button[aria-label*="transcript"]',
+            // Look for buttons in the description area
+            '#description button[aria-label*="transcript"]',
+            '#description-inline-expander button[aria-label*="transcript"]',
+            '#meta-contents button[aria-label*="transcript"]'
+        ];
+        
+        for (const selector of selectors) {
+            try {
+                const button = document.querySelector(selector);
+                if (button && button.offsetParent !== null) { // Check if button is visible
+                    console.log(`Found transcript button using selector: ${selector}`);
+                    return button;
+                }
+            } catch (error) {
+                // Continue to next selector
+            }
+        }
+        
+        // If direct selectors fail, try text-based search
+        const allButtons = document.querySelectorAll('button');
+        for (const button of allButtons) {
+            const text = button.textContent?.toLowerCase() || '';
+            const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+            const tooltip = button.getAttribute('data-tooltip-text')?.toLowerCase() || '';
+            
+            if (text.includes('transcript') || ariaLabel.includes('transcript') || tooltip.includes('transcript')) {
+                console.log('Found transcript button via text search');
+                return button;
+            }
+        }
+        
+        return null;
+    }
+    
+    // Helper function to wait for transcript panel to load
+    async function waitForTranscriptPanel() {
+        const selectors = [
+            // Modern YouTube transcript panel selectors
+            'ytd-transcript-body-renderer',
+            'ytd-transcript-segment-renderer',
+            '.ytd-transcript-segment-renderer',
+            'ytd-transcript-segment-list-renderer',
+            '[data-transcript-body]',
+            // Generic transcript content selectors
+            '[aria-label*="transcript"]',
+            '.transcript-content',
+            '.transcript-text',
+            '.transcript-segment'
+        ];
+        
+        for (const selector of selectors) {
+            const elements = await waitForElements(selector, 3000);
+            if (elements.length > 0) {
+                console.log(`Found transcript panel using selector: ${selector}`);
+                return elements[0];
+            }
+        }
+        
+        return null;
+    }
+    
+    // Helper function to extract transcript text from the panel
+    async function extractTranscriptText(transcriptPanel) {
+        try {
+            const extractionMethods = [
+                // Method 1: Extract from transcript segments
+                () => {
+                    const segments = transcriptPanel.querySelectorAll('ytd-transcript-segment-renderer, .ytd-transcript-segment-renderer, .transcript-segment');
+                    if (segments.length > 0) {
+                        return Array.from(segments)
+                            .map(segment => {
+                                // Try multiple ways to get text content
+                                const textElement = segment.querySelector('.segment-text, .transcript-text, [class*="text"]') || segment;
+                                return textElement.textContent?.trim() || '';
+                            })
+                            .filter(text => text.length > 0)
+                            .join('\n');
+                    }
+                    return '';
+                },
+                
+                // Method 2: Extract from transcript body
+                () => {
+                    const body = transcriptPanel.querySelector('ytd-transcript-body-renderer, .transcript-body, [data-transcript-body]');
+                    if (body) {
+                        return body.textContent?.trim() || '';
+                    }
+                    return '';
+                },
+                
+                // Method 3: Extract all text from the panel
+                () => {
+                    return transcriptPanel.textContent?.trim() || '';
+                }
+            ];
+            
+            for (const method of extractionMethods) {
+                const result = method();
+                if (result && result.length > 50) { // Ensure we have substantial content
+                    return result;
+                }
+            }
+            
+            return '';
+        } catch (error) {
+            console.error('Error extracting transcript text:', error);
+            return '';
         }
     }
 
