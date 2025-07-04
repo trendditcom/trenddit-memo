@@ -101,24 +101,6 @@ if (!window.avnamMemoInitialized) {
                 window.avnamMemo.isHighlightMode = true;
                 document.body.style.cursor = 'crosshair';
                 
-                // Add visual indicator for transcript capture mode
-                const indicator = document.createElement('div');
-                indicator.id = 'transcript-capture-indicator';
-                indicator.style.cssText = `
-                    position: fixed;
-                    top: 10px;
-                    right: 10px;
-                    background: #ef4444;
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    z-index: 2147483647;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                `;
-                indicator.textContent = 'Transcript Capture Mode - Click on transcript text';
-                document.body.appendChild(indicator);
-                
                 sendResponse({ success: true });
             } else {
                 sendResponse({
@@ -350,12 +332,6 @@ if (!window.avnamMemoInitialized) {
                 window.avnamMemo.transcriptCaptureMemoId = null;
                 document.body.style.cursor = 'default';
                 
-                // Remove transcript capture indicator
-                const indicator = document.getElementById('transcript-capture-indicator');
-                if (indicator) {
-                    indicator.remove();
-                }
-                
                 // Remove highlight from element
                 if (window.avnamMemo.highlightedElement) {
                     window.avnamMemo.highlightedElement.classList.remove('highlight-outline');
@@ -397,11 +373,6 @@ if (!window.avnamMemoInitialized) {
             window.avnamMemo.isHighlightMode = false;
             window.avnamMemo.transcriptCaptureMemoId = null;
             document.body.style.cursor = 'default';
-            
-            const indicator = document.getElementById('transcript-capture-indicator');
-            if (indicator) {
-                indicator.remove();
-            }
         }
     }
 

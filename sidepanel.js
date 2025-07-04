@@ -593,21 +593,19 @@ chrome.runtime.onMessage.addListener((message) => {
         showStatus('success', message.message || 'Memo updated successfully');
         resetMemoButton();
         
-        // If memo detail view is currently shown, refresh it
+        // If memo detail view is currently shown and we have a current memo, refresh it
         const memoDetailView = document.getElementById('memoDetailView');
-        if (memoDetailView && !memoDetailView.classList.contains('hidden')) {
-            // Get the current memo ID from the URL or a stored reference
-            const currentMemoTitle = document.getElementById('memoTitle')?.textContent;
-            if (currentMemoTitle) {
-                // Find the updated memo and refresh the detail view
-                chrome.storage.local.get(['memos'], (result) => {
-                    const memos = result.memos || [];
-                    const updatedMemo = memos.find(m => m.title === currentMemoTitle);
-                    if (updatedMemo) {
-                        displayMemoDetail(updatedMemo);
-                    }
-                });
-            }
+        if (memoDetailView && !memoDetailView.classList.contains('hidden') && currentMemo) {
+            // Find the updated memo by ID and refresh the detail view
+            chrome.storage.local.get(['memos'], async (result) => {
+                const memos = result.memos || [];
+                const updatedMemo = memos.find(m => m.id === currentMemo.id);
+                if (updatedMemo) {
+                    // Update the global currentMemo reference
+                    currentMemo = updatedMemo;
+                    await displayMemoDetail(updatedMemo, null, window.setCurrentMemo);
+                }
+            });
         }
     }
 });
@@ -1159,18 +1157,23 @@ async function showMemoByTitle(title) {
     const memos = result.memos || [];
     const memo = memos.find(m => m.title === title);
     if (memo) {
+        // Set the global current memo reference
+        currentMemo = memo;
         // Hide chat panel
         document.getElementById('chatPanel').classList.add('hidden');
         // Show memo detail view and hide memo list view
         document.getElementById('memoDetailView').classList.remove('hidden');
         document.getElementById('memoListView').classList.add('hidden');
         // Show memo detail
-        displayMemoDetail(memo);
+        displayMemoDetail(memo, null, window.setCurrentMemo);
     }
 }
 
-// Make showMemoByTitle available to onclick handlers
+// Make functions available to onclick handlers and other modules
 window.showMemoByTitle = showMemoByTitle;
+window.setCurrentMemo = (memo) => {
+    currentMemo = memo;
+};
 
 // Save current chat
 async function saveCurrentChat() {

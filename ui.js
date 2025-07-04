@@ -124,7 +124,9 @@ export async function displayMemoList(memos) {
         // Add click handler for the memo item (excluding delete button)
         memoItem.addEventListener('click', async (e) => {
             if (!e.target.closest('.delete-memo')) {
-                await displayMemoDetail(memo, tags);
+                // Use global setCurrentMemo if available
+                const setCurrentMemo = window.setCurrentMemo || null;
+                await displayMemoDetail(memo, tags, setCurrentMemo);
             }
         });
         
@@ -164,8 +166,13 @@ export async function displayMemoList(memos) {
 }
 
 // Display memo detail
-export async function displayMemoDetail(memo, tags) {
+export async function displayMemoDetail(memo, tags, setCurrentMemo) {
     let currentMemo = memo;
+    
+    // If callback provided, update global currentMemo
+    if (setCurrentMemo && typeof setCurrentMemo === 'function') {
+        setCurrentMemo(memo);
+    }
     const tagStyle = await getTagStyle(memo.tag || 'Untagged');
     const memoDetailView = document.getElementById('memoDetailView');
     const memoListView = document.getElementById('memoListView');

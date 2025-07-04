@@ -127,6 +127,8 @@ export class OpenAIProvider extends LLMProvider {
             throw new Error('Provider not initialized. Call initialize() first.');
         }
 
+        const { url, tags } = options;
+        
         // Truncate content to prevent rate limit errors
         // Leave room for system message and JSON response (approximately 2000 tokens)
         const truncatedContent = this.truncateContent(content, 28000);
@@ -136,28 +138,38 @@ export class OpenAIProvider extends LLMProvider {
         
         // Create system message for memo processing
         const systemPrompt = `You are an AI assistant that processes web content into structured memos. 
-Extract key information from the provided HTML content and return a JSON object with the following structure:
-{
-    "title": "Main title or heading of the content",
-    "summary": "A concise 2-3 sentence summary of the main points",
-    "narrative": "A more detailed description of the content and its significance",
-    "structuredData": {
-        "key": "value pairs of important structured information"
-    },
-    "selectedTag": "A single relevant tag from: article, research, news, tutorial, reference, documentation, blog, social, product, company, person, event, other"
-}
+        Given HTML content and a URL, you will:
+        1. Extract and summarize the key information
+        2. Create a narrative version
+        3. Generate structured data
+        4. Select the most appropriate tag from the available tags
+        
+        Special instructions for YouTube content:
+        - If transcript is not available, focus on the video title, description, metadata, and channel information
+        - Create a meaningful summary based on the available information
+        - Do not return generic error messages like "content not accessible"
+        - Always provide a substantive analysis based on the YouTube metadata provided
+        
+        Available tags: ${tags ? tags.map(t => t.name).join(', ') : 'general'}
+        
+        Return only valid JSON without any additional text or formatting.`;
 
-Special instructions for YouTube content:
-- If transcript is not available, focus on the video title, description, metadata, and channel information
-- Create a meaningful summary based on the available information
-- Do not return generic error messages like "content not accessible"
-- Always provide a substantive analysis based on the YouTube metadata provided
-
-Return only valid JSON without any additional text or formatting.`;
+        const userMessage = `Process this web content into a memo:
+        URL: ${url || 'Unknown'}
+        Content: ${sanitizedContent}
+        
+        Return the results in this JSON format:
+        {
+            "title": "Extracted title",
+            "summary": "Brief summary",
+            "narrative": "Narrative version",
+            "structuredData": {}, // Relevant structured data
+            "selectedTag": "Most appropriate tag"
+        }`;
 
         const messages = [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: sanitizedContent }
+            { role: 'user', content: userMessage }
         ];
 
         try {
