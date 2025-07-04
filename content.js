@@ -197,11 +197,15 @@ if (!window.avnamMemoInitialized) {
         // Clean the content
         const cleanedElement = cleanContent(cleanElement);
         
+        // Extract dominant image from the selected content
+        const dominantImage = extractDominantImage(element);
+        
         const memoData = {
             url: window.location.href,
             favicon: document.querySelector('link[rel="icon"]')?.href || `${window.location.origin}/favicon.ico`,
             timestamp: new Date().toISOString(),
-            rawHtml: cleanedElement.innerHTML
+            rawHtml: cleanedElement.innerHTML,
+            dominantImage: dominantImage
         };
         
         console.log('Sending memo data:', memoData);
@@ -643,6 +647,66 @@ if (!window.avnamMemoInitialized) {
         }
         
         return null;
+    }
+
+    // Extract dominant image from selected content
+    function extractDominantImage(element) {
+        try {
+            // Find all images within the selected element
+            const images = element.querySelectorAll('img');
+            
+            if (images.length === 0) {
+                return null;
+            }
+            
+            let dominantImage = null;
+            let maxArea = 0;
+            
+            // Find the largest visible image
+            for (const img of images) {
+                // Skip if image is not visible or has no src
+                if (!img.src || img.style.display === 'none' || img.style.visibility === 'hidden') {
+                    continue;
+                }
+                
+                // Get computed styles to check visibility
+                const computedStyle = window.getComputedStyle(img);
+                if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden' || computedStyle.opacity === '0') {
+                    continue;
+                }
+                
+                // Calculate image area
+                const rect = img.getBoundingClientRect();
+                const area = rect.width * rect.height;
+                
+                // Consider image as dominant if it has the largest area and is reasonably sized
+                if (area > maxArea && rect.width > 50 && rect.height > 50) {
+                    maxArea = area;
+                    dominantImage = img;
+                }
+            }
+            
+            if (dominantImage) {
+                // Check if image is actually loaded and visible
+                if (dominantImage.complete && dominantImage.naturalWidth > 0) {
+                    return {
+                        src: dominantImage.src,
+                        alt: dominantImage.alt || '',
+                        width: dominantImage.naturalWidth,
+                        height: dominantImage.naturalHeight,
+                        displayWidth: dominantImage.width,
+                        displayHeight: dominantImage.height,
+                        title: dominantImage.title || '',
+                        className: dominantImage.className || ''
+                    };
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error extracting dominant image:', error);
+            return null;
+        }
     }
 
     async function waitForElements(selector, timeout = 2000) {

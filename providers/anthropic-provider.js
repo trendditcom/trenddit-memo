@@ -263,4 +263,73 @@ export class AnthropicProvider extends LLMProvider {
         
         return true;
     }
+
+    // Check if provider supports vision
+    supportsVision() {
+        // All current Claude models support vision
+        return true;
+    }
+
+    // Analyze image
+    async analyzeImage(imageData, prompt) {
+        try {
+            if (!this.initialized) {
+                throw new Error('Provider not initialized');
+            }
+
+            // Convert image data to base64 if needed
+            let imageBase64;
+            if (typeof imageData === 'string' && imageData.startsWith('data:')) {
+                // Extract base64 from data URL
+                imageBase64 = imageData.split(',')[1];
+            } else if (typeof imageData === 'object' && imageData.src) {
+                // Fetch image and convert to base64
+                const response = await fetch(imageData.src);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                imageBase64 = await new Promise((resolve) => {
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            } else {
+                throw new Error('Invalid image data format');
+            }
+
+            const messages = [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: prompt
+                        },
+                        {
+                            type: 'image',
+                            source: {
+                                type: 'base64',
+                                media_type: 'image/jpeg',
+                                data: imageBase64
+                            }
+                        }
+                    ]
+                }
+            ];
+
+            const response = await this.client.messages({
+                model: this.model,
+                max_tokens: 1000,
+                messages: messages
+            });
+
+            return {
+                content: response.content[0].text,
+                analysis: response.content[0].text,
+                usage: response.usage
+            };
+
+        } catch (error) {
+            console.error('Error analyzing image with Anthropic:', error);
+            throw new Error(`Image analysis failed: ${error.message}`);
+        }
+    }
 }

@@ -34,6 +34,13 @@ export class LLMProviderFactory {
                     'claude-3-7-sonnet-20250219',
                     'claude-3-5-sonnet-20241022',
                     'claude-3-5-haiku-20241022'
+                ],
+                visionModels: [
+                    'claude-opus-4-20250514',
+                    'claude-sonnet-4-20250514',
+                    'claude-3-7-sonnet-20250219',
+                    'claude-3-5-sonnet-20241022',
+                    'claude-3-5-haiku-20241022'
                 ]
             },
             {
@@ -42,6 +49,12 @@ export class LLMProviderFactory {
                 description: 'GPT models by OpenAI',
                 requiresApiKey: true,
                 models: [
+                    'o4-mini',
+                    'gpt-4o',
+                    'gpt-4.1',
+                    'gpt-4.1-mini'
+                ],
+                visionModels: [
                     'o4-mini',
                     'gpt-4o',
                     'gpt-4.1',
@@ -61,7 +74,13 @@ export class LLMProviderFactory {
                     'gemini-pro',
                     'gemini-pro-vision'
                 ],
-                supportsVision: true
+                visionModels: [
+                    'gemini-2.5-pro',
+                    'gemini-2.5-flash',
+                    'gemini-1.5-pro',
+                    'gemini-1.5-flash',
+                    'gemini-pro-vision'
+                ]
             },
             {
                 id: 'ollama',
@@ -70,7 +89,15 @@ export class LLMProviderFactory {
                 requiresApiKey: false,
                 requiresService: true,
                 models: [], // Will be populated dynamically
-                isLocal: true
+                isLocal: true,
+                visionModels: [
+                    'llava',
+                    'bakllava',
+                    'llava-llama3',
+                    'llava-phi3',
+                    'llava-v1.6',
+                    'moondream'
+                ]
             }
         ];
     }
@@ -110,6 +137,122 @@ export class LLMProviderFactory {
                 break;
             default:
                 throw new Error(`Unknown provider type: ${type}`);
+        }
+    }
+
+    // Check if a specific model has vision capabilities
+    static hasVisionCapability(providerType, modelName) {
+        const providers = this.getAvailableProviders();
+        const provider = providers.find(p => p.id === providerType);
+        
+        if (!provider) {
+            return false;
+        }
+
+        // For Ollama, check if model name contains vision keywords
+        if (providerType === 'ollama') {
+            if (!modelName) return false;
+            const visionKeywords = provider.visionModels;
+            return visionKeywords.some(keyword => 
+                modelName.toLowerCase().includes(keyword.toLowerCase())
+            );
+        }
+
+        // For other providers, check if model is in visionModels list
+        return provider.visionModels && provider.visionModels.includes(modelName);
+    }
+
+    // Get all vision-capable models for a provider
+    static getVisionModels(providerType) {
+        const providers = this.getAvailableProviders();
+        const provider = providers.find(p => p.id === providerType);
+        
+        if (!provider) {
+            return [];
+        }
+
+        return provider.visionModels || [];
+    }
+
+    // Save vision capabilities to local storage
+    static async saveVisionCapabilities() {
+        try {
+            const providers = this.getAvailableProviders();
+            const visionData = {};
+
+            for (const provider of providers) {
+                visionData[provider.id] = {
+                    name: provider.name,
+                    hasVision: !!(provider.visionModels && provider.visionModels.length > 0),
+                    visionModels: provider.visionModels || [],
+                    allModels: provider.models || []
+                };
+            }
+
+            // Save to local storage
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+                await new Promise((resolve, reject) => {
+                    chrome.storage.local.set({ visionCapabilities: visionData }, () => {
+                        if (chrome.runtime.lastError) {
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+            }
+
+            return visionData;
+        } catch (error) {
+            console.error('Failed to save vision capabilities:', error);
+            throw error;
+        }
+    }
+
+    // Load vision capabilities from local storage
+    static async loadVisionCapabilities() {
+        try {
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+                return new Promise((resolve, reject) => {
+                    chrome.storage.local.get(['visionCapabilities'], (result) => {
+                        if (chrome.runtime.lastError) {
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else {
+                            resolve(result.visionCapabilities || null);
+                        }
+                    });
+                });
+            }
+            return null;
+        } catch (error) {
+            console.error('Failed to load vision capabilities:', error);
+            return null;
+        }
+    }
+
+    // Check if current provider and model has vision capability
+    static async getCurrentVisionCapability() {
+        try {
+            // Get current configuration
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+                const result = await new Promise((resolve, reject) => {
+                    chrome.storage.local.get(['llmConfig'], (result) => {
+                        if (chrome.runtime.lastError) {
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else {
+                            resolve(result.llmConfig || null);
+                        }
+                    });
+                });
+
+                if (result && result.type && result.model) {
+                    return this.hasVisionCapability(result.type, result.model);
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to get current vision capability:', error);
+            return false;
         }
     }
 } 

@@ -33,7 +33,6 @@ Enable capturing and processing content from YouTube videos, Twitter threads, an
 [x] Add platform detection logic in background.js
 [x] Update memo data structure to include platform-specific metadata
 [x] Ensure all LLM providers can process extended content types
-[ ] Add platform filtering to memo list view
 
 ### Phase 4: Platform-Specific UI Enhancements
 [x] Add platform indicators to memo cards
@@ -43,9 +42,9 @@ Enable capturing and processing content from YouTube videos, Twitter threads, an
 [ ] Update export functionality to preserve platform-specific formatting
 
 ### Phase 5: Additional Social Media Platforms
-[ ] Research and prioritize other platforms (Reddit, LinkedIn, Instagram)
+[ ] Research and prioritize LinkedIn and Reddit
 [ ] Create modular content extractor framework for easy platform additions
-[ ] Implement at least one additional platform as proof of concept
+[ ] Implement LinkedIn and Reddit platforms
 [ ] Document the process for adding new platforms
 
 ### Phase 6: Testing and Polish

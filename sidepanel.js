@@ -796,14 +796,34 @@ async function updateProviderIndicator() {
             
             // Update the UI element
             if (providerIndicatorElement) {
-                providerIndicatorElement.textContent = `Using ${providerName}`;
+                const textNode = providerIndicatorElement.firstChild;
+                if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                    textNode.textContent = `Using ${providerName}`;
+                } else {
+                    // Fallback: replace all text content while preserving structure
+                    providerIndicatorElement.innerHTML = `Using ${providerName}${providerIndicatorElement.innerHTML.includes('svg') ? providerIndicatorElement.innerHTML.substring(providerIndicatorElement.innerHTML.indexOf('<svg')) : ''}`;
+                }
             }
+            
+            // Update vision icon
+            await updateVisionIcon();
         } else {
             document.title = baseTitle;
             
             // Update the UI element
             if (providerIndicatorElement) {
-                providerIndicatorElement.textContent = 'No provider configured';
+                const textNode = providerIndicatorElement.firstChild;
+                if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                    textNode.textContent = 'No provider configured';
+                } else {
+                    providerIndicatorElement.innerHTML = `No provider configured${providerIndicatorElement.innerHTML.includes('svg') ? providerIndicatorElement.innerHTML.substring(providerIndicatorElement.innerHTML.indexOf('<svg')) : ''}`;
+                }
+            }
+            
+            // Hide vision icon when no provider
+            const visionIcon = document.getElementById('visionIcon');
+            if (visionIcon) {
+                visionIcon.classList.add('hidden');
             }
         }
     } catch (error) {
@@ -813,7 +833,18 @@ async function updateProviderIndicator() {
         // Update the UI element with error state
         const providerIndicatorElement = document.getElementById('providerIndicator');
         if (providerIndicatorElement) {
-            providerIndicatorElement.textContent = 'Provider unknown';
+            const textNode = providerIndicatorElement.firstChild;
+            if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                textNode.textContent = 'Provider unknown';
+            } else {
+                providerIndicatorElement.innerHTML = `Provider unknown${providerIndicatorElement.innerHTML.includes('svg') ? providerIndicatorElement.innerHTML.substring(providerIndicatorElement.innerHTML.indexOf('<svg')) : ''}`;
+            }
+        }
+        
+        // Hide vision icon on error
+        const visionIcon = document.getElementById('visionIcon');
+        if (visionIcon) {
+            visionIcon.classList.add('hidden');
         }
     }
 }
@@ -875,6 +906,9 @@ async function initializeExtension() {
         // Initialize provider settings
         await initializeProviderSettings();
 
+        // Initialize vision capabilities
+        await initializeVisionCapabilities();
+
         // Initialize other components
         await initializeTags();
         loadMemos();
@@ -888,6 +922,39 @@ async function initializeExtension() {
     } catch (error) {
         console.error('Error initializing extension:', error);
         showStatus('error', 'Failed to initialize extension');
+    }
+}
+
+// Initialize vision capabilities
+async function initializeVisionCapabilities() {
+    try {
+        // Save vision capabilities to local storage
+        await LLMProviderFactory.saveVisionCapabilities();
+        console.log('Vision capabilities initialized and saved to storage');
+        
+        // Update vision icon for current provider
+        await updateVisionIcon();
+    } catch (error) {
+        console.error('Failed to initialize vision capabilities:', error);
+    }
+}
+
+// Update vision icon based on current provider and model
+async function updateVisionIcon() {
+    try {
+        const hasVision = await LLMProviderFactory.getCurrentVisionCapability();
+        const visionIcon = document.getElementById('visionIcon');
+        
+        if (visionIcon) {
+            if (hasVision) {
+                visionIcon.classList.remove('hidden');
+                visionIcon.setAttribute('title', 'Vision capable model - can analyze images');
+            } else {
+                visionIcon.classList.add('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to update vision icon:', error);
     }
 }
 
