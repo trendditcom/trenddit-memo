@@ -7,13 +7,16 @@ Enable capturing and processing content from YouTube videos, Twitter threads, an
 
 ### Phase 1: YouTube Integration
 [x] Integrate YouTube content extraction directly into content.js
-[x] Implement automatic YouTube detection - show hourglass cursor instead of hover/selection
+[x] Implement automatic YouTube detection - show hourglass cursor instead of hover/selection UI
 [x] Implement YouTube transcript extraction using video.google.com API with DOM fallback
 [x] Extract video metadata (title, author, duration, views, description)
 [x] Extract video thumbnail URL from YouTube video ID
 [x] Add YouTube-specific content processing in background.js
-[x] Create YouTube video thumbnail display in memo detail view
-[ ] Test with various YouTube video types (shorts, live streams, regular videos)
+[x] Create YouTube video thumbnail display in memo detail view and memo list
+[x] Add specialized YouTube processing notification ("Processing YouTube Page")
+[x] Implement robust JSON parsing for YouTube content across all LLM providers
+[x] Add token counting and content truncation for large YouTube transcripts
+[x] Test with various YouTube video types (shorts, live streams, regular videos)
 
 ### Phase 2: Twitter/X Integration
 [ ] Create twitter-extractor.js content script for Twitter/X pages
@@ -61,6 +64,10 @@ Enable capturing and processing content from YouTube videos, Twitter threads, an
 4. **Privacy**: Respect user privacy settings and platform terms of service
 5. **YouTube-Specific**: Automatically detect YouTube pages and process without hover/selection UI
 6. **API-First Approach**: Use official APIs (video.google.com for transcripts) with DOM parsing as fallback
+7. **Automatic Processing**: Show hourglass cursor during YouTube processing instead of interactive selection
+8. **Specialized Notifications**: Provide clear user feedback for platform-specific processing
+9. **Content Truncation**: Implement token counting and content truncation for large video transcripts
+10. **Multi-Provider Support**: Ensure YouTube content works seamlessly with all LLM providers
 
 ### Technical Considerations
 1. **Content Scripts**: Each platform needs its own content script with specific DOM selectors
@@ -104,8 +111,14 @@ class ContentExtractor {
 4. Respect robots.txt and platform terms of service
 
 ## Success Criteria
-- Users can capture content from YouTube videos with one click
+- Users can capture content from YouTube videos with one click (automatic detection)
+- YouTube thumbnails are displayed in memo details and lists
+- YouTube transcripts are extracted using API with DOM fallback
+- Video metadata (title, author, duration, views, description) is captured
+- Specialized processing notifications provide clear user feedback
+- Large YouTube transcripts are handled with token counting and truncation
+- All existing features (chat, tags, export) work with YouTube content
+- Performance remains smooth even with large transcript content
+- YouTube integration works seamlessly with all LLM providers (Anthropic, OpenAI, Gemini, Ollama)
 - Twitter threads are captured and preserved with proper formatting
-- All existing features (chat, tags, export) work with new content types
-- Performance remains smooth even with large content pieces
 - At least 3 social media platforms are supported

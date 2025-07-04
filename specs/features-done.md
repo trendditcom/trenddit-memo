@@ -210,16 +210,18 @@ The extension integrates with Anthropic's Claude AI for content processing and c
 - Cross-origin support
 
 ### Content Capture System
-The Content Capture System enables users to select and save content from any webpage, with intelligent processing and organization. Here's how it works:
+The Content Capture System enables users to select and save content from any webpage, with intelligent processing and organization. It includes specialized handling for YouTube videos with automatic detection and processing. Here's how it works:
 
 #### Core Components
 1. **Content Selection**
-   - Interactive highlight mode with visual feedback
+   - Interactive highlight mode with visual feedback for general webpages
    - Real-time element highlighting and preview
    - Cross-origin content capture support
    - Visual selection guide and cursor feedback
    - DOM traversal and element identification
    - Safe content extraction
+   - **YouTube-Specific**: Automatic detection and processing without hover/selection UI
+   - **YouTube Processing**: Hourglass cursor display during automatic processing
 
 2. **Content Processing**
    - HTML content sanitization and cleaning
@@ -230,9 +232,12 @@ The Content Capture System enables users to select and save content from any web
    - Word count tracking
    - JSON data validation
    - Cross-origin resource handling
+   - **YouTube-Specific**: Video metadata extraction (title, author, duration, views, description)
+   - **YouTube Thumbnails**: Automatic thumbnail URL generation and display
+   - **YouTube Transcripts**: API-based transcript extraction with DOM fallback
 
 3. **Background Processing**
-   - Asynchronous content processing through Claude
+   - Asynchronous content processing through multiple LLM providers
    - Automatic tag suggestion
    - Title and summary extraction
    - Narrative content generation
@@ -240,15 +245,18 @@ The Content Capture System enables users to select and save content from any web
    - Error handling and recovery
    - Progress tracking
    - Status notifications
+   - **YouTube-Specific**: Specialized processing notification ("Processing YouTube Page")
+   - **YouTube Integration**: Seamless integration with all LLM providers for video content
 
 #### Data Flow
 1. **Selection Process**
    - User activates capture mode
-   - Real-time element highlighting
-   - Click to select content
+   - **General Pages**: Real-time element highlighting and click selection
+   - **YouTube Pages**: Automatic detection and processing without user selection
    - Initial content cleaning
    - Metadata gathering
    - Word count calculation
+   - **YouTube-Specific**: Automatic transcript and metadata extraction
 
 2. **Processing Pipeline**
    - Content sanitization and normalization
@@ -260,7 +268,7 @@ The Content Capture System enables users to select and save content from any web
    - Error handling and recovery
 
 #### Key Features
-- Visual element highlighting
+- Visual element highlighting (for general webpages)
 - Intelligent content cleaning
 - Cross-origin support
 - Automatic tag suggestion
@@ -272,6 +280,10 @@ The Content Capture System enables users to select and save content from any web
 - JSON data validation
 - Safe content extraction
 - Real-time feedback
+- **YouTube Integration**: Automatic page detection and processing
+- **YouTube Metadata**: Complete video information extraction
+- **YouTube Thumbnails**: Automatic thumbnail display in memo details and lists
+- **YouTube Transcripts**: API-based transcript extraction with fallback mechanisms
 
 ### Storage and Data Management
 The Storage and Data Management system provides robust local data persistence and synchronization capabilities. Here's how it works:
