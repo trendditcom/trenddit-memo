@@ -120,7 +120,9 @@ This roadmap is ordered from top to bottom by priority of development.
 
 [x] Local LLM Integration: Enable users to choose Ollama as a model provider - Complete Ollama provider implementation with factory integration, configuration management, UI integration, service detection, model discovery, and comprehensive testing. Users can now run AI models locally for privacy and offline use. Includes connection testing, error handling, and seamless switching between local and cloud providers. Full test coverage and documentation completed.
 
-[ ] Extended Content Sources: Capture and process content from YouTube videos, Twitter threads, and other social media platforms directly within the extension.
+[x] Extended Content Sources (Phase 1 - YouTube): Capture and process content from YouTube videos directly within the extension. Complete YouTube extractor implementation with transcript extraction, video metadata capture (title, author, duration, views, description), specialized content processing pipeline, platform-specific UI styling, and comprehensive testing. Users can now save YouTube videos as memos with full transcript and metadata analysis. Includes platform detection, specialized memo data structure, and seamless integration with all LLM providers.
+
+[ ] Extended Content Sources (Phase 2+): Complete Twitter/X integration and additional social media platforms (Reddit, LinkedIn, Instagram) with modular content extractor framework.
 
 [ ] Rich Media Support: Process and analyze images, videos, and audio content, enabling comprehensive multi-media content capture and organization.
 

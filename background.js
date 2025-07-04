@@ -93,6 +93,104 @@ chrome.action.onClicked.addListener((tab) => {
     chrome.sidePanel.open({ tabId: tab.id });
 });
 
+// Handle YouTube memo creation
+async function handleYouTubeMemo(youtubeData) {
+    try {
+        // Fetch current tags
+        const tagsResult = await chrome.storage.local.get(['tags']);
+        const tags = tagsResult.tags || [];
+        
+        console.log('Processing YouTube memo with tags:', tags);
+        console.log('Processing YouTube content:', youtubeData.data.metadata.title);
+        
+        // Format YouTube content for processing
+        const formattedContent = formatYouTubeContent(youtubeData.data);
+        
+        const processedContent = await providerManager.processMemo(formattedContent, {
+            url: youtubeData.data.metadata.videoUrl || youtubeData.url,
+            tags: tags,
+            platform: 'youtube'
+        });
+        console.log('Received processed YouTube content:', processedContent);
+        
+        const memo = {
+            id: Date.now().toString(),
+            url: youtubeData.data.metadata.videoUrl || youtubeData.url,
+            favicon: 'https://youtube.com/favicon.ico',
+            timestamp: Date.now(),
+            sourceHtml: formattedContent,
+            title: youtubeData.data.metadata.title || processedContent.title,
+            summary: processedContent.summary,
+            narrative: processedContent.narrative,
+            structuredData: {
+                ...processedContent.structuredData,
+                platform: 'youtube',
+                videoMetadata: youtubeData.data.metadata,
+                transcriptAvailable: youtubeData.data.metadata.transcriptAvailable
+            },
+            tag: processedContent.selectedTag,
+            platform: 'youtube'
+        };
+
+        // Save to storage
+        return new Promise((resolve, reject) => {
+            chrome.storage.local.get(['memos'], (result) => {
+                const memos = result.memos || [];
+                memos.unshift(memo);
+                chrome.storage.local.set({ memos }, () => {
+                    // Notify content script and side panel
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        // Only try to send message to content script if we have an active tab
+                        if (tabs && tabs.length > 0) {
+                            try {
+                                chrome.tabs.sendMessage(tabs[0].id, { action: 'memoSaved' });
+                            } catch (error) {
+                                console.error('Failed to notify content script:', error);
+                                // Don't reject the promise, just log the error
+                            }
+                        }
+                        // Always notify the side panel
+                        chrome.runtime.sendMessage({ action: 'memoSaved' });
+                        resolve();
+                    });
+                });
+            });
+        });
+
+    } catch (error) {
+        console.error('Error processing YouTube memo:', error);
+        console.error('Error details:', error.message);
+        // Notify side panel about error
+        chrome.runtime.sendMessage({
+            action: 'error',
+            error: error.message
+        });
+    }
+}
+
+// Format YouTube content for LLM processing
+function formatYouTubeContent(youtubeData) {
+    const { metadata, content } = youtubeData;
+    
+    let formatted = `YouTube Video: ${metadata.title || 'Untitled'}\n`;
+    formatted += `Channel: ${metadata.author || 'Unknown'}\n`;
+    formatted += `Duration: ${metadata.duration || 'Unknown'}\n`;
+    formatted += `Views: ${metadata.views || 'Unknown'}\n`;
+    formatted += `Upload Date: ${metadata.uploadDate || 'Unknown'}\n`;
+    
+    if (metadata.description) {
+        formatted += `\nDescription:\n${metadata.description}\n`;
+    }
+    
+    if (content && content.length > 0) {
+        formatted += `\nTranscript:\n${content}\n`;
+    } else {
+        formatted += `\nTranscript: Not available\n`;
+    }
+    
+    return formatted;
+}
+
 // Handle new memo creation
 async function handleMemo(memoData) {
     try {
@@ -162,6 +260,11 @@ async function handleMemo(memoData) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'processMemo') {
         handleMemo(request.data)
+            .then(() => sendResponse({ success: true }))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true; // Will respond asynchronously
+    } else if (request.action === 'processYouTubeMemo') {
+        handleYouTubeMemo(request.data)
             .then(() => sendResponse({ success: true }))
             .catch(error => sendResponse({ success: false, error: error.message }));
         return true; // Will respond asynchronously

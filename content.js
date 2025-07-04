@@ -155,31 +155,81 @@ if (!window.avnamMemoInitialized) {
             action: 'savingMemo'
         });
         
-        // Send the data to the background script
-        chrome.runtime.sendMessage({
-            action: 'processMemo',
-            data: memoData
-        }, (response) => {
-            if (!response) {
-                console.error('No response received from background script');
-                return;
-            }
-            
-            if (response.success) {
-                // Reset highlight mode and remove selection effect
-                window.avnamMemo.isHighlightMode = false;
-                document.body.style.cursor = 'default';
-                
-                if (window.avnamMemo.highlightedElement) {
-                    window.avnamMemo.highlightedElement.classList.remove('highlight-outline');
-                    window.avnamMemo.highlightedElement = null;
+        // Check if this is a YouTube page and handle accordingly
+        if (isYouTubePage()) {
+            // For YouTube pages, extract video content instead of selected element
+            handleYouTubeContent();
+        } else {
+            // Send the data to the background script
+            chrome.runtime.sendMessage({
+                action: 'processMemo',
+                data: memoData
+            }, (response) => {
+                if (!response) {
+                    console.error('No response received from background script');
+                    return;
                 }
+                
+                if (response.success) {
+                    // Reset highlight mode and remove selection effect
+                    window.avnamMemo.isHighlightMode = false;
+                    document.body.style.cursor = 'default';
+                    
+                    if (window.avnamMemo.highlightedElement) {
+                        window.avnamMemo.highlightedElement.classList.remove('highlight-outline');
+                        window.avnamMemo.highlightedElement = null;
+                    }
+                } else {
+                    console.error('Failed to process memo:', response.error || 'Unknown error');
+                    alert('Failed to save memo. Please try again.');
+                }
+            });
+        }
+    });
+
+    // YouTube-specific helper functions
+    function isYouTubePage() {
+        return window.location.hostname.includes('youtube.com') || 
+               window.location.hostname.includes('youtu.be') || 
+               window.location.hostname.includes('youtube-nocookie.com');
+    }
+
+    function handleYouTubeContent() {
+        // Request YouTube content extraction
+        chrome.runtime.sendMessage({
+            action: 'extractYouTubeContent'
+        }, (response) => {
+            if (response && response.success) {
+                // Send YouTube data to background script
+                chrome.runtime.sendMessage({
+                    action: 'processYouTubeMemo',
+                    data: response
+                }, (memoResponse) => {
+                    if (!memoResponse) {
+                        console.error('No response received from background script');
+                        return;
+                    }
+                    
+                    if (memoResponse.success) {
+                        // Reset highlight mode and remove selection effect
+                        window.avnamMemo.isHighlightMode = false;
+                        document.body.style.cursor = 'default';
+                        
+                        if (window.avnamMemo.highlightedElement) {
+                            window.avnamMemo.highlightedElement.classList.remove('highlight-outline');
+                            window.avnamMemo.highlightedElement = null;
+                        }
+                    } else {
+                        console.error('Failed to process YouTube memo:', memoResponse.error || 'Unknown error');
+                        alert('Failed to save YouTube memo. Please try again.');
+                    }
+                });
             } else {
-                console.error('Failed to process memo:', response.error || 'Unknown error');
-                alert('Failed to save memo. Please try again.');
+                console.error('Failed to extract YouTube content:', response?.error || 'Unknown error');
+                alert('Failed to extract YouTube content. Please try again.');
             }
         });
-    });
+    }
 
     // Initialize the content script
     initialize();

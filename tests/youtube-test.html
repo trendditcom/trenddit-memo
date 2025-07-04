@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Extractor Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>YouTube Extractor Tests</h1>
+        <div id="status" class="status">Loading tests...</div>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        // Mock Chrome APIs for testing
+        window.chrome = {
+            runtime: {
+                sendMessage: () => Promise.resolve(),
+                onMessage: {
+                    addListener: () => {}
+                }
+            }
+        };
+        
+        // Load and run tests
+        try {
+            // Load the YouTube extractor first
+            const response = await fetch('../youtube-extractor.js');
+            const extractorCode = await response.text();
+            
+            // Execute the extractor code
+            eval(extractorCode);
+            
+            // Load the test runner
+            const testRunnerModule = await import('./test-runner.js');
+            const { testRunner } = testRunnerModule;
+            
+            // Load and run the tests
+            await import('./youtube-extractor.test.js');
+            
+            document.getElementById('status').textContent = 'Tests completed! Check console for details.';
+            document.getElementById('status').className = 'status success';
+            
+        } catch (error) {
+            console.error('Test execution failed:', error);
+            document.getElementById('status').textContent = 'Tests failed: ' + error.message;
+            document.getElementById('status').className = 'status error';
+        }
+    </script>
+</body>
+</html>
