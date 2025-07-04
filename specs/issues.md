@@ -1,5 +1,9 @@
 # Issues
 
+[x] When clicking Analyze Image button - Error analyzing image with Anthropic: Error: Could not process image
+
+Solution: Fixed the image analysis functionality in the Anthropic provider by implementing proper media type detection, comprehensive validation, and enhanced error handling. The fix includes: 1) Dynamic media type detection from data URLs and blob responses instead of hardcoded 'image/jpeg', 2) Comprehensive validation of base64 data, media type, and API responses, 3) Enhanced error handling with specific error messages for rate limits, quota, authentication, and network issues, 4) Proper FileReader error handling with reject callbacks, 5) Added extensive logging for debugging, 6) Fetch validation for response status and blob size. The image analysis now correctly processes images of various formats (PNG, JPEG, GIF, WebP) and provides meaningful error messages when issues occur.
+
 [x] Just like YouTube thumbnails are processed and added to memo in list view and detail view, add capability to processes dominant image (largest, most visible) within selected content when hover and select is used to capture memo.
 
 Solution: Implemented dominant image extraction functionality in content.js that detects the largest visible image within selected content. Added `extractDominantImage()` function that finds images with area > 50x50 pixels, calculates their display area, and extracts metadata including src, alt, dimensions, and title. The image data is included in memo data structure and stored in `structuredData.dominantImage`. Updated ui.js to display extracted images in both memo list view and detail view with proper styling and error handling.
