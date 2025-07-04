@@ -1,5 +1,13 @@
 # Issues
 
+[x] Rollback Analyze Image button and functionality when Analyze Image button is clicked.
+
+Solution: Removed all "Analyze Image" functionality including the button in ui.js, the analyzeImage method in ProviderManager and handleImageAnalysis function in background.js, the analyzeImage method in AnthropicProvider, and all vision-related methods in LLMProviderFactory. Also removed the vision capabilities test file. All tests continue to pass after the removal.
+
+[x] Error analyzing image with Anthropic: Error: messages.0.content.1.image.source.base64.media_type: Input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'
+
+Solution: Fixed media type validation in AnthropicProvider.analyzeImage() method by implementing proper media type normalization. The fix includes: 1) Added normalizeMediaType() function that removes parameters (charset), converts to lowercase, and normalizes variations like 'image/jpg' to 'image/jpeg', 2) Validates against accepted formats ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 3) Defaults to 'image/jpeg' for unknown image types, 4) Added logging for debugging. This ensures the media type sent to Anthropic API matches exactly what the API expects, preventing the validation error.
+
 [x] When clicking Analyze Image button - Error analyzing image with Anthropic: Error: Could not process image
 
 Solution: Fixed the image analysis functionality in the Anthropic provider by implementing proper media type detection, comprehensive validation, and enhanced error handling. The fix includes: 1) Dynamic media type detection from data URLs and blob responses instead of hardcoded 'image/jpeg', 2) Comprehensive validation of base64 data, media type, and API responses, 3) Enhanced error handling with specific error messages for rate limits, quota, authentication, and network issues, 4) Proper FileReader error handling with reject callbacks, 5) Added extensive logging for debugging, 6) Fetch validation for response status and blob size. The image analysis now correctly processes images of various formats (PNG, JPEG, GIF, WebP) and provides meaningful error messages when issues occur.

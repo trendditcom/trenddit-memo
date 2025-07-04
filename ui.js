@@ -295,35 +295,7 @@ export async function displayMemoDetail(memo, tags, setCurrentMemo) {
         // Insert image before summary
         memoSummaryElement.parentNode.insertBefore(imageContainer, memoSummaryElement);
         
-        // Check if current model has vision capabilities and image hasn't been analyzed
-        const hasBeenAnalyzed = memo.structuredData?.imageAnalysis;
-        
-        if (!hasBeenAnalyzed) {
-            // Check vision capabilities asynchronously
-            LLMProviderFactory.getCurrentVisionCapability().then(hasVision => {
-                if (hasVision) {
-                    // Create analyze image button
-                    const analyzeButton = document.createElement('button');
-                    analyzeButton.className = 'mb-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200';
-                    analyzeButton.innerHTML = `
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        <span>Analyze Image</span>
-                    `;
-                    
-                    analyzeButton.addEventListener('click', () => {
-                        analyzeImage(memo, dominantImage);
-                    });
-                    
-                    // Insert analyze button after image
-                    imageContainer.parentNode.insertBefore(analyzeButton, imageContainer.nextSibling);
-                }
-            }).catch(error => {
-                console.error('Failed to check vision capabilities:', error);
-            });
-        }
+        // Note: Image analysis functionality has been removed
     }
     
     memoSummaryElement.textContent = memo.summary;
@@ -555,42 +527,4 @@ async function captureYouTubeTranscript(memo) {
     }
 }
 
-// Analyze image using current LLM provider
-async function analyzeImage(memo, imageData) {
-    try {
-        showStatus('info', 'Analyzing image...');
-        
-        // Create prompt for image analysis
-        const prompt = "Analyze this image and explain what it shows. Be detailed and descriptive.";
-        
-        // Send image analysis request to background script
-        const response = await chrome.runtime.sendMessage({
-            action: 'analyzeImage',
-            data: {
-                memoId: memo.id,
-                imageData: imageData,
-                prompt: prompt
-            }
-        });
-        
-        if (response && response.success) {
-            showStatus('success', 'Image analysis completed');
-            
-            // Update memo with analysis result
-            const updatedMemo = response.memo;
-            
-            // Refresh the memo detail view to show the analysis
-            const result = await chrome.storage.local.get(['tags']);
-            const tags = result.tags || [];
-            
-            // Re-display memo detail with updated data
-            await displayMemoDetail(updatedMemo, tags);
-        } else {
-            showStatus('error', response?.error || 'Failed to analyze image');
-        }
-        
-    } catch (error) {
-        console.error('Error analyzing image:', error);
-        showStatus('error', 'Failed to analyze image');
-    }
-} 
+// Note: Image analysis functionality has been removed 

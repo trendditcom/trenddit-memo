@@ -8,9 +8,9 @@ This roadmap is ordered from top to bottom by priority of development.
 
 [x] Extended Content Sources (Phase 1 - YouTube): Capture and process content from YouTube videos directly within the extension. Complete YouTube integration with automatic page detection and processing without hover/selection UI. Features include video metadata capture (title, author, duration, views, description), thumbnail display, transcript extraction via video.google.com API with DOM fallback, specialized content processing pipeline, platform-specific UI styling, and comprehensive testing. Users can now save YouTube videos as memos with full video metadata and transcript analysis. Includes platform detection, specialized memo data structure, and seamless integration with all LLM providers.
 
-[ ] Extended Content Sources (Phase 2+): Complete Twitter/X integration and additional social media platforms (LinkedIn, Reddit) with modular content extractor framework.
+[x] Rich Media Support: Process and analyze images content as part of selected content.
 
-[ ] Rich Media Support: Process and analyze images content as part of selected content.
+[ ] Extended Content Sources (Phase 2+): Complete Twitter/X integration and additional social media platforms (LinkedIn, Reddit) with modular content extractor framework.
 
 [ ] Advanced Format Handling: Import and process content from markdown files, PDFs, and other document formats while preserving structure and formatting.
 
