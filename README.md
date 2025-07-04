@@ -73,8 +73,11 @@ We support 4 different AI providers because everyone has preferences:
 4. Watch the AI do its magic ✨
 5. Try asking it questions about what you saved
 
-![Content Selection](images/select-content-to-capture.png)
-*Select any content on a webpage by clicking after entering capture mode*
+<div align="center">
+  <img src="images/select-content-to-capture.png" alt="Content Selection" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">Select any content on a webpage by clicking after entering capture mode</em>
+</div>
 
 *Pro tip: Start with capturing a few different types of content (articles, product pages, etc.) then ask "what did I save about [topic]?" - it's pretty cool!*
 
@@ -91,8 +94,11 @@ Here's what we've built so far (and what we're excited about):
 - **Remembers everything**: Saves where you found it, when you saved it, even the site's favicon
 - **Works everywhere**: Any website, any content (we've tested it everywhere we could think of!)
 
-![Saved Memos](images/save-memo.png)
-*Your captured content gets organized automatically with AI-generated summaries*
+<div align="center">
+  <img src="images/save-memo.png" alt="Saved Memos" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">Your captured content gets organized automatically with AI-generated summaries</em>
+</div>
 
 ### 🏷️ Organization Without the Work  
 - **AI suggests tags**: It's surprisingly good at figuring out how to categorize your stuff
@@ -101,8 +107,11 @@ Here's what we've built so far (and what we're excited about):
 - **Make it yours**: Create custom tags with your own colors and icons
 - **Projects that make sense**: Group related content together (like "React Learning" or "Vacation Planning")
 
-![Tag Management](images/tags.png)
-*Organize your content with beautiful tags and icons*
+<div align="center">
+  <img src="images/tags.png" alt="Tag Management" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">Organize your content with beautiful tags and icons</em>
+</div>
 
 ### 💬 Chat That's Actually Useful
 - **Ask real questions**: "What did I save about performance optimization?" or "Compare the pricing I found"
@@ -110,8 +119,11 @@ Here's what we've built so far (and what we're excited about):
 - **See your sources**: Every answer links back to what you saved
 - **Save good conversations**: Keep the useful discussions for later
 
-![Chat Interface](images/chat-with-memo.png)
-*Have natural conversations with your saved content using AI*
+<div align="center">
+  <img src="images/chat-with-memo.png" alt="Chat Interface" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">Have natural conversations with your saved content using AI</em>
+</div>
 
 ### 🛡️ Privacy We Actually Care About
 - **Your computer, your data**: Everything stored locally by default
@@ -178,8 +190,11 @@ Honestly, it depends on what you're doing:
 3. Suggests tags to keep things organized
 4. Extracts structured data like prices, ratings, dates
 
-![Memo Details](images/memo-details.png)
-*View detailed analysis of your saved content including AI-generated summaries and structured data*
+<div align="center">
+  <img src="images/memo-details.png" alt="Memo Details" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">View detailed analysis of your saved content including AI-generated summaries and structured data</em>
+</div>
 
 #### Staying Organized
 1. Check out the AI's suggested tags (they're usually pretty good!)
@@ -218,8 +233,11 @@ Honestly, it depends on what you're doing:
 - **When we use it**: Privacy-sensitive stuff, offline work, experimenting
 - **Setup**: Install from [ollama.ai](https://ollama.ai) + enhanced retry logic for reliable connections
 
-![Ollama Settings](images/use-ollama-models.png)
-*Configure Ollama for completely private, local AI processing*
+<div align="center">
+  <img src="images/use-ollama-models.png" alt="Ollama Settings" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">Configure Ollama for completely private, local AI processing</em>
+</div>
 
 </details>
 
@@ -337,6 +355,12 @@ We're pretty excited about what we've shipped recently:
 - ✅ Smart handling of long transcripts
 - ✅ Seamless chat with video content
 - ✅ Works with all AI providers
+
+<div align="center">
+  <img src="images/video-memo.jpg" alt="YouTube Video Memo" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin: 20px 0;" />
+  <br/>
+  <em style="color: #666; font-size: 0.9em;">Capture YouTube videos with transcripts and chat with the content</em>
+</div>
 
 **Multi-AI Support (2024)**
 - ✅ Works with Anthropic Claude (our favorite for deep thinking)
