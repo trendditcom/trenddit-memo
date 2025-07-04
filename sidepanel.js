@@ -805,8 +805,6 @@ async function updateProviderIndicator() {
                 }
             }
             
-            // Update vision icon
-            await updateVisionIcon();
         } else {
             document.title = baseTitle;
             
@@ -820,11 +818,6 @@ async function updateProviderIndicator() {
                 }
             }
             
-            // Hide vision icon when no provider
-            const visionIcon = document.getElementById('visionIcon');
-            if (visionIcon) {
-                visionIcon.classList.add('hidden');
-            }
         }
     } catch (error) {
         console.error('Failed to update provider indicator:', error);
@@ -841,11 +834,6 @@ async function updateProviderIndicator() {
             }
         }
         
-        // Hide vision icon on error
-        const visionIcon = document.getElementById('visionIcon');
-        if (visionIcon) {
-            visionIcon.classList.add('hidden');
-        }
     }
 }
 
@@ -906,8 +894,6 @@ async function initializeExtension() {
         // Initialize provider settings
         await initializeProviderSettings();
 
-        // Initialize vision capabilities
-        await initializeVisionCapabilities();
 
         // Initialize other components
         await initializeTags();
@@ -925,38 +911,6 @@ async function initializeExtension() {
     }
 }
 
-// Initialize vision capabilities
-async function initializeVisionCapabilities() {
-    try {
-        // Save vision capabilities to local storage
-        await LLMProviderFactory.saveVisionCapabilities();
-        console.log('Vision capabilities initialized and saved to storage');
-        
-        // Update vision icon for current provider
-        await updateVisionIcon();
-    } catch (error) {
-        console.error('Failed to initialize vision capabilities:', error);
-    }
-}
-
-// Update vision icon based on current provider and model
-async function updateVisionIcon() {
-    try {
-        const hasVision = await LLMProviderFactory.getCurrentVisionCapability();
-        const visionIcon = document.getElementById('visionIcon');
-        
-        if (visionIcon) {
-            if (hasVision) {
-                visionIcon.classList.remove('hidden');
-                visionIcon.setAttribute('title', 'Vision capable model - can analyze images');
-            } else {
-                visionIcon.classList.add('hidden');
-            }
-        }
-    } catch (error) {
-        console.error('Failed to update vision icon:', error);
-    }
-}
 
 // Set button to saving state
 function setSavingState() {

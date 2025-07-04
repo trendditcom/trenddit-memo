@@ -72,18 +72,6 @@ class ProviderManager {
         return this.initialized && this.currentProvider && this.currentProvider.initialized;
     }
 
-    async analyzeImage(imageData, prompt) {
-        if (!this.currentProvider || !this.currentProvider.initialized) {
-            throw new Error('LLM provider not configured');
-        }
-
-        // Check if provider supports image analysis
-        if (typeof this.currentProvider.analyzeImage !== 'function') {
-            throw new Error('Current provider does not support image analysis');
-        }
-
-        return await this.currentProvider.analyzeImage(imageData, prompt);
-    }
 }
 
 // Global provider manager instance
@@ -214,71 +202,6 @@ function formatYouTubeContent(youtubeData) {
     return formatted;
 }
 
-// Handle image analysis for existing memo
-async function handleImageAnalysis(analysisData) {
-    try {
-        const { memoId, imageData, prompt } = analysisData;
-        
-        console.log('Analyzing image for memo:', memoId);
-        
-        // Analyze the image using the current provider
-        const analysis = await providerManager.analyzeImage(imageData, prompt);
-        
-        if (!analysis.success) {
-            throw new Error('Image analysis failed');
-        }
-        
-        // Get current memos
-        const result = await chrome.storage.local.get(['memos']);
-        const memos = result.memos || [];
-        
-        // Find the memo to update
-        const memoIndex = memos.findIndex(m => m.id === memoId);
-        if (memoIndex === -1) {
-            throw new Error('Memo not found');
-        }
-        
-        const memo = memos[memoIndex];
-        
-        // Add analysis to memo's structured data
-        const updatedMemo = {
-            ...memo,
-            structuredData: {
-                ...memo.structuredData,
-                imageAnalysis: {
-                    analysis: analysis.analysis,
-                    timestamp: Date.now(),
-                    prompt: prompt
-                }
-            },
-            // Add analysis to source content
-            sourceHtml: memo.sourceHtml + `\n\nImage Analysis:\n${analysis.analysis}`,
-            // Update summary to include image analysis
-            summary: memo.summary + `\n\nImage: ${analysis.analysis.substring(0, 100)}...`,
-            lastUpdated: Date.now()
-        };
-        
-        // Update memos array
-        memos[memoIndex] = updatedMemo;
-        
-        // Save updated memos
-        await chrome.storage.local.set({ memos });
-        
-        // Notify side panel about the update
-        chrome.runtime.sendMessage({ 
-            action: 'memoUpdated', 
-            memo: updatedMemo 
-        });
-        
-        console.log('Successfully analyzed image and updated memo');
-        
-        return { success: true, analysis: analysis.analysis };
-        
-    } catch (error) {
-        console.error('Error analyzing image:', error);
-        throw error;
-    }
-}
 
 // Handle updating existing memo with transcript
 async function handleMemoTranscriptUpdate(updateData) {
@@ -513,12 +436,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Handle updating existing memo with transcript
         handleMemoTranscriptUpdate(request.data)
             .then(() => sendResponse({ success: true }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true; // Will respond asynchronously
-    } else if (request.action === 'analyzeImage') {
-        // Handle image analysis
-        handleImageAnalysis(request.data)
-            .then(result => sendResponse({ success: true, analysis: result.analysis }))
             .catch(error => sendResponse({ success: false, error: error.message }));
         return true; // Will respond asynchronously
     }

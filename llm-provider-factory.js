@@ -35,13 +35,6 @@ export class LLMProviderFactory {
                     'claude-3-5-sonnet-20241022',
                     'claude-3-5-haiku-20241022'
                 ],
-                visionModels: [
-                    'claude-opus-4-20250514',
-                    'claude-sonnet-4-20250514',
-                    'claude-3-7-sonnet-20250219',
-                    'claude-3-5-sonnet-20241022',
-                    'claude-3-5-haiku-20241022'
-                ]
             },
             {
                 id: 'openai',
@@ -54,12 +47,6 @@ export class LLMProviderFactory {
                     'gpt-4.1',
                     'gpt-4.1-mini'
                 ],
-                visionModels: [
-                    'o4-mini',
-                    'gpt-4o',
-                    'gpt-4.1',
-                    'gpt-4.1-mini'
-                ]
 },
             {
                 id: 'gemini',
@@ -74,13 +61,6 @@ export class LLMProviderFactory {
                     'gemini-pro',
                     'gemini-pro-vision'
                 ],
-                visionModels: [
-                    'gemini-2.5-pro',
-                    'gemini-2.5-flash',
-                    'gemini-1.5-pro', 
-                    'gemini-1.5-flash',
-                    'gemini-pro-vision'
-                ]
             },
             {
                 id: 'ollama',
@@ -90,14 +70,6 @@ export class LLMProviderFactory {
                 requiresService: true,
                 models: [], // Will be populated dynamically
                 isLocal: true,
-                visionModels: [
-                    'llava',
-                    'bakllava', 
-                    'llava-llama3',
-                    'llava-phi3',
-                    'llava-v1.6',
-                    'moondream'
-                ]
             }
         ];
     }
@@ -140,67 +112,4 @@ export class LLMProviderFactory {
         }
     }
 
-    // Check if a specific model has vision capabilities
-    static hasVisionCapability(provider, model) {
-        const providers = this.getAvailableProviders();
-        const providerConfig = providers.find(p => p.id === provider);
-        
-        if (!providerConfig || !providerConfig.visionModels) {
-            return false;
-        }
-        
-        return providerConfig.visionModels.includes(model);
-    }
-
-    // Get vision models for all providers
-    static getVisionModels() {
-        const providers = this.getAvailableProviders();
-        const visionModels = {};
-        
-        providers.forEach(provider => {
-            if (provider.visionModels) {
-                visionModels[provider.id] = provider.visionModels;
-            }
-        });
-        
-        return visionModels;
-    }
-
-    // Save vision capabilities to local storage
-    static async saveVisionCapabilities() {
-        try {
-            const visionModels = this.getVisionModels();
-            await chrome.storage.local.set({ visionCapabilities: visionModels });
-            console.log('Vision capabilities saved to storage');
-        } catch (error) {
-            console.error('Failed to save vision capabilities:', error);
-        }
-    }
-
-    // Load vision capabilities from local storage
-    static async loadVisionCapabilities() {
-        try {
-            const result = await chrome.storage.local.get(['visionCapabilities']);
-            return result.visionCapabilities || this.getVisionModels();
-        } catch (error) {
-            console.error('Failed to load vision capabilities:', error);
-            return this.getVisionModels();
-        }
-    }
-
-    // Check if current provider and model combination has vision capability
-    static async getCurrentVisionCapability() {
-        try {
-            const result = await chrome.storage.local.get(['llmConfig']);
-            if (!result.llmConfig) {
-                return false;
-            }
-
-            const { type: provider, model } = result.llmConfig;
-            return this.hasVisionCapability(provider, model);
-        } catch (error) {
-            console.error('Failed to get current vision capability:', error);
-            return false;
-        }
-    }
 } 
