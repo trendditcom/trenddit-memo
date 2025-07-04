@@ -86,6 +86,7 @@ Here's what we've built so far (and what we're excited about):
 
 ### 🎯 Content Capture That Actually Works
 - **Point and click**: Just click on anything you want to save - text, images, entire sections
+- **YouTube videos too!**: Automatically captures videos with transcripts and metadata
 - **AI does the heavy lifting**: Automatically extracts titles, summaries, and the important stuff
 - **Remembers everything**: Saves where you found it, when you saved it, even the site's favicon
 - **Works everywhere**: Any website, any content (we've tested it everywhere we could think of!)
@@ -95,7 +96,8 @@ Here's what we've built so far (and what we're excited about):
 
 ### 🏷️ Organization Without the Work  
 - **AI suggests tags**: It's surprisingly good at figuring out how to categorize your stuff
-- **Pretty icons**: 70+ icons to make your collections actually look nice
+- **23 smart categories**: From "To Read" and "Ideas" to "Work", "Learning", and "Entertainment"
+- **Pretty icons**: Beautiful icons to make your collections actually look nice
 - **Make it yours**: Create custom tags with your own colors and icons
 - **Projects that make sense**: Group related content together (like "React Learning" or "Vacation Planning")
 
@@ -166,8 +168,9 @@ Honestly, it depends on what you're doing:
 1. Click our icon to open the side panel
 2. Find something interesting on any webpage
 3. Hit "Capture Content" 
-4. Everything lights up - click what you want to save
-5. We immediately save it and queue it for AI processing
+4. For regular pages: Everything lights up - click what you want to save
+5. For YouTube: Just hit capture - we grab the video, transcript, and metadata automatically
+6. We immediately save it and queue it for AI processing
 
 #### What the AI Does  
 1. Reads through your content automatically
@@ -223,15 +226,26 @@ Honestly, it depends on what you're doing:
 <details>
 <summary><b>🏷️ Organization Magic</b></summary>
 
-**We include tons of predefined tags:**
-- 📚 Learning & Education  
-- 💼 Work & Productivity
-- 🛒 Shopping & Reviews
-- 📈 Finance & Investment
-- 🎮 Entertainment & Gaming
-- 🍳 Food & Recipes  
-- ✈️ Travel & Places
-- Plus 60+ more categories!
+**We include 23 predefined tags organized by how you work:**
+
+*Workflow & Action:*
+- 📖 To Read - Content you want to come back to
+- 🚧 In Progress - Active projects and tasks
+- 💡 Ideas - Inspiration and brainstorming
+- 📦 Archive - Reference material for later
+
+*Content Types:*
+- 🎬 Video - YouTube videos and video content
+- 🛠️ Tools - Useful apps and services
+- 📝 Meeting Notes - Work discussions
+- 📰 News - Current events and articles
+
+*Topic & Context:*
+- 💼 Work - Professional content
+- 🏠 Personal - Life and hobbies
+- 📚 Learning - Educational resources
+- 💰 Finance - Money matters
+- Plus 11 more categories!
 
 **Making your own tags:**
 1. Hit "Manage Tags" in settings
@@ -270,8 +284,9 @@ Honestly, it depends on what you're doing:
 |----------|----------|------------------|
 | **📈 Investment Research** | Save earnings reports → Tag by company → Ask "How's Tesla doing?" | AI connects dots across multiple sources |
 | **🛒 Smart Shopping** | Save product reviews → Tag by category → Ask "Which laptop should I get?" | Compares everything you researched |
-| **📚 Learning** | Save tutorials → Tag by skill → Ask "How do I optimize React?" | Personal AI tutor from your saved content |
+| **📚 Learning** | Save tutorials & YouTube videos → Tag by skill → Ask "How do I optimize React?" | Personal AI tutor from your saved content |
 | **📰 Staying Informed** | Save articles → Tag by topic → Ask "What's happening with AI?" | Synthesizes trends from your reading |
+| **🎬 Video Research** | Capture YouTube videos → Tag "Learning" → Ask "What did that tutorial say about hooks?" | Chat with video content using transcripts |
 
 ---
 
@@ -315,6 +330,14 @@ Honestly, it depends on what you're doing:
 
 We're pretty excited about what we've shipped recently:
 
+**YouTube Integration (Jan 2025) 🎉**
+- ✅ Capture YouTube videos with one click
+- ✅ Automatic transcript extraction
+- ✅ Video metadata and thumbnails
+- ✅ Smart handling of long transcripts
+- ✅ Seamless chat with video content
+- ✅ Works with all AI providers
+
 **Multi-AI Support (2024)**
 - ✅ Works with Anthropic Claude (our favorite for deep thinking)
 - ✅ OpenAI GPT integration (great all-rounder)
@@ -336,7 +359,7 @@ We're pretty excited about what we've shipped recently:
 **Core Experience (2024)**
 - ✅ Modern Chrome extension that actually works
 - ✅ Point-and-click content capture
-- ✅ 70+ beautiful icons for organization
+- ✅ 23 smart tag categories with beautiful icons
 - ✅ Natural conversation interface
 - ✅ Local storage with optional sync
 - ✅ Robust provider configuration management
@@ -364,8 +387,8 @@ We're pretty excited about what we've shipped recently:
 
 We get requests for these a lot:
 
-**More Content Sources**
-- 📋 YouTube videos and podcast transcripts
+**More Content Sources** (YouTube ✅ Done!)
+- 📋 Podcast transcripts and audio content
 - 📋 Twitter/X threads (the good ones!)
 - 📋 Social media content that's worth saving
 - 📋 Import from emails and documents
