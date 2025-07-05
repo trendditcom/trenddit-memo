@@ -1,5 +1,11 @@
 # Issues
 
+[ ] Markdown tables are not rendering
+
+[x] When in Chat with Memo if the response has markdown then render as HTML
+
+Solution: Implemented markdown rendering for Chat with Memo responses by adding a `convertMarkdownToHtml()` function to sidepanel.js that converts common markdown syntax to HTML. The function handles headers (#, ##, ###), bold text (**text**), italic text (*text*), code blocks (```code```), inline code (`code`), links ([text](url)), unordered lists (- item), ordered lists (1. item), and line breaks. Updated the `addChatMessage()` function to use this markdown renderer for assistant messages while preserving the existing memo citation functionality. The implementation uses Tailwind CSS classes for styling and maintains the existing chat UI appearance.
+
 [x] When a model provider is active then settings screen should show that model provider as active. When model provider is changed in settings screen then active model provider should change.
 
 Solution: The settings screen already properly handles displaying the active provider in the dropdown. The `initializeProviderSettings()` function correctly sets the provider selection at line 652 (`providerSelect.value = currentConfig.type;`) and the `updateProviderIndicator()` function is called after saving settings to update the UI. The provider configuration manager properly maintains the active provider state and the settings screen accurately reflects the current configuration.

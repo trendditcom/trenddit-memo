@@ -1125,6 +1125,46 @@ function updateTokenCount(memos, useSource = false) {
     tokenCountElement.textContent = `This chat will cost around ${tokenCount.toLocaleString()} tokens`;
 }
 
+// Simple markdown to HTML converter for chat messages
+function convertMarkdownToHtml(markdown) {
+    let html = markdown;
+    
+    // Convert headers (# ## ###)
+    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold text-gray-800 mb-2">$1</h3>');
+    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold text-gray-800 mb-2">$1</h2>');
+    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold text-gray-800 mb-2">$1</h1>');
+    
+    // Convert bold text (**text** or __text__)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+    html = html.replace(/__(.*?)__/g, '<strong class="font-semibold">$1</strong>');
+    
+    // Convert italic text (*text* or _text_)
+    html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+    html = html.replace(/_(.*?)_/g, '<em class="italic">$1</em>');
+    
+    // Convert code blocks (```code```)
+    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 p-2 rounded text-sm font-mono overflow-x-auto my-2"><code>$1</code></pre>');
+    
+    // Convert inline code (`code`)
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
+    
+    // Convert links ([text](url))
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Convert unordered lists (- item or * item)
+    html = html.replace(/^[\s]*[\-\*]\s+(.*)$/gm, '<li class="ml-4">$1</li>');
+    html = html.replace(/(<li.*<\/li>)/s, '<ul class="list-disc list-inside mb-2">$1</ul>');
+    
+    // Convert ordered lists (1. item)
+    html = html.replace(/^[\s]*\d+\.\s+(.*)$/gm, '<li class="ml-4">$1</li>');
+    html = html.replace(/(<li.*<\/li>)/s, '<ol class="list-decimal list-inside mb-2">$1</ol>');
+    
+    // Convert line breaks (preserve whitespace-pre-wrap behavior)
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+}
+
 // Add a message to the chat
 function addChatMessage(role, content) {
     const messagesContainer = document.getElementById('chatMessages');
@@ -1148,9 +1188,12 @@ function addChatMessage(role, content) {
             return match;
         });
         
+        // Convert markdown to HTML
+        const htmlContent = convertMarkdownToHtml(contentWithLinks);
+        
         messageDiv.innerHTML = `
             <div class="bg-white rounded-lg shadow p-4">
-                <p class="text-sm text-gray-700 whitespace-pre-wrap">${contentWithLinks}</p>
+                <div class="text-sm text-gray-700">${htmlContent}</div>
                 ${citedMemos.length > 0 ? `
                     <div class="mt-2 pt-2 border-t border-gray-200">
                         <p class="text-xs font-semibold text-gray-600 mb-2">Memos cited:</p>
