@@ -15,11 +15,25 @@ export class ProviderConfigManager {
                 return;
             }
 
-            this.storage.local.get(['llmConfig'], (result) => {
+            this.storage.local.get(['llmProviderConfigs', 'activeProvider', 'llmConfig'], (result) => {
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                
+                // Handle legacy single config format
+                if (result.llmConfig && !result.llmProviderConfigs) {
+                    resolve(result.llmConfig);
+                    return;
+                }
+                
+                const configs = result.llmProviderConfigs || {};
+                const activeProvider = result.activeProvider;
+                
+                if (activeProvider && configs[activeProvider]) {
+                    resolve(configs[activeProvider]);
                 } else {
-                    resolve(result.llmConfig || null);
+                    resolve(null);
                 }
             });
         });
@@ -43,10 +57,36 @@ export class ProviderConfigManager {
                 lastUpdated: Date.now()
             };
 
-            // Use centralized storage function to ensure backup
-            saveToStorage('llmConfig', configWithTimestamp)
+            // Get current provider configs and update the specific provider
+            this.storage.local.get(['llmProviderConfigs'], (result) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+
+                const currentConfigs = result.llmProviderConfigs || {};
+                const updatedConfigs = {
+                    ...currentConfigs,
+                    [config.type]: configWithTimestamp
+                };
+
+                // Save both the provider-specific configs and set active provider
+                const saveData = {
+                    llmProviderConfigs: updatedConfigs,
+                    activeProvider: config.type,
+                    // Keep legacy format for backward compatibility
+                    llmConfig: configWithTimestamp
+                };
+
+                // Use centralized storage function to ensure backup
+                Promise.all([
+                    saveToStorage('llmProviderConfigs', updatedConfigs),
+                    saveToStorage('activeProvider', config.type),
+                    saveToStorage('llmConfig', configWithTimestamp)
+                ])
                 .then(() => resolve(true))
                 .catch(error => reject(error));
+            });
         });
     }
 
@@ -94,29 +134,52 @@ export class ProviderConfigManager {
                 return;
             }
 
-            this.storage.local.get(['anthropicApiKey', 'llmConfig'], (result) => {
+            this.storage.local.get(['anthropicApiKey', 'llmConfig', 'llmProviderConfigs'], (result) => {
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
                     return;
                 }
 
-                if (result.llmConfig) {
-                    // Already migrated
+                // If new format already exists, no migration needed
+                if (result.llmProviderConfigs) {
                     resolve(false);
                     return;
                 }
 
-                if (result.anthropicApiKey) {
-                    // Migrate old format
-                    const newConfig = {
+                let migrationNeeded = false;
+                const providerConfigs = {};
+
+                // Migrate existing llmConfig to new format
+                if (result.llmConfig) {
+                    providerConfigs[result.llmConfig.type] = {
+                        ...result.llmConfig,
+                        migrated: true
+                    };
+                    migrationNeeded = true;
+                }
+
+                // Migrate legacy anthropicApiKey
+                if (result.anthropicApiKey && !providerConfigs.anthropic) {
+                    providerConfigs.anthropic = {
                         type: 'anthropic',
                         apiKey: result.anthropicApiKey,
                         model: 'claude-3-5-sonnet-20241022',
                         migrated: true,
                         lastUpdated: Date.now()
                     };
+                    migrationNeeded = true;
+                }
 
-                    this.storage.local.set({ llmConfig: newConfig }, () => {
+                if (migrationNeeded) {
+                    // Determine active provider (prefer current llmConfig type, fallback to anthropic)
+                    const activeProvider = result.llmConfig?.type || 'anthropic';
+                    
+                    const migrationData = {
+                        llmProviderConfigs: providerConfigs,
+                        activeProvider: activeProvider
+                    };
+
+                    this.storage.local.set(migrationData, () => {
                         if (chrome.runtime.lastError) {
                             reject(new Error(chrome.runtime.lastError.message));
                         } else {
@@ -132,11 +195,34 @@ export class ProviderConfigManager {
 
     // Get provider-specific configuration
     async getProviderConfig(providerType) {
-        const config = await this.getCurrentConfig();
-        if (!config || config.type !== providerType) {
-            return null;
-        }
-        return config;
+        return new Promise((resolve, reject) => {
+            if (!this.storage) {
+                reject(new Error('Chrome storage not available'));
+                return;
+            }
+
+            this.storage.local.get(['llmProviderConfigs', 'llmConfig'], (result) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                
+                // Check new format first
+                const configs = result.llmProviderConfigs || {};
+                if (configs[providerType]) {
+                    resolve(configs[providerType]);
+                    return;
+                }
+                
+                // Fall back to legacy format if the requested provider matches current config
+                if (result.llmConfig && result.llmConfig.type === providerType) {
+                    resolve(result.llmConfig);
+                    return;
+                }
+                
+                resolve(null);
+            });
+        });
     }
 
     // Update API key for current provider
@@ -230,8 +316,31 @@ export class ProviderConfigManager {
 
     // Switch to a different provider
     async switchProvider(providerType, apiKey = null) {
-        const config = this.createDefaultConfig(providerType, apiKey);
-        return await this.setConfig(config);
+        // Try to get existing config for this provider first
+        let config = await this.getProviderConfig(providerType);
+        
+        if (!config) {
+            // Create default config if none exists
+            config = this.createDefaultConfig(providerType, apiKey);
+        } else if (apiKey) {
+            // Update API key if provided
+            config = { ...config, apiKey, lastUpdated: Date.now() };
+        }
+        
+        // Update active provider without changing the config itself
+        return new Promise((resolve, reject) => {
+            if (!this.storage) {
+                reject(new Error('Chrome storage not available'));
+                return;
+            }
+
+            Promise.all([
+                saveToStorage('activeProvider', providerType),
+                saveToStorage('llmConfig', config) // Update legacy format for compatibility
+            ])
+            .then(() => resolve(true))
+            .catch(error => reject(error));
+        });
     }
 
     // Get configuration status information

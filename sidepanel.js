@@ -127,6 +127,9 @@ async function refreshOllamaModels() {
             statusDot.className = 'w-2 h-2 rounded-full mr-2 bg-green-400';
             statusText.textContent = 'Service available';
             
+            // Store current selection to preserve it
+            const currentSelection = modelSelect.value;
+            
             // Update model dropdown
             modelSelect.innerHTML = '<option value="">Select model...</option>';
             
@@ -150,6 +153,12 @@ async function refreshOllamaModels() {
                 } else {
                     console.log('[Ollama Debug] Successfully loaded models');
                     statusText.textContent = `Service available - ${result.models.length} models found`;
+                    
+                    // Restore previous selection if it exists in the updated model list
+                    if (currentSelection && result.models.some(m => m.name === currentSelection)) {
+                        console.log('[Ollama Debug] Restoring previous model selection:', currentSelection);
+                        modelSelect.value = currentSelection;
+                    }
                 }
             } else {
                 console.log('[Ollama Debug] No models data returned');
@@ -651,14 +660,19 @@ async function initializeProviderSettings() {
         providerSelect.addEventListener('change', async (e) => {
             const selectedProvider = e.target.value;
             
-            // Get the current config to preserve model selection for the selected provider
-            const currentConfig = await providerConfigManager.getCurrentConfig();
+            // Get the saved config for the selected provider to restore its settings
+            const savedConfig = await providerConfigManager.getProviderConfig(selectedProvider);
             let selectedModel = null;
-            if (currentConfig && currentConfig.type === selectedProvider && currentConfig.model) {
-                selectedModel = currentConfig.model;
+            if (savedConfig && savedConfig.model) {
+                selectedModel = savedConfig.model;
             }
             
             await showProviderConfig(selectedProvider, selectedModel);
+            
+            // If we have a saved config for this provider, populate its fields
+            if (savedConfig) {
+                await populateProviderFields(savedConfig);
+            }
         });
 
         // Update provider indicator after migration and config loading

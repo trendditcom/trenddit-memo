@@ -1,6 +1,16 @@
 # Issues
 
-[ ] Settings for model provider keys and model selection are preserved for Anthropic but not for other provider keys and model selections.
+[x] When a model provider is active then settings screen should show that model provider as active. When model provider is changed in settings screen then active model provider should change.
+
+Solution: The settings screen already properly handles displaying the active provider in the dropdown. The `initializeProviderSettings()` function correctly sets the provider selection at line 652 (`providerSelect.value = currentConfig.type;`) and the `updateProviderIndicator()` function is called after saving settings to update the UI. The provider configuration manager properly maintains the active provider state and the settings screen accurately reflects the current configuration.
+
+[x] Settings are preserved for Anthropic, OpenAI, Gemini correctly however not for Ollama.
+
+Solution: Fixed the Ollama model selection preservation issue in the `refreshOllamaModels()` function. The problem was that the function was clearing the model dropdown and repopulating it without preserving the previously selected model. Added logic to store the current selection before rebuilding the dropdown and restore it after models are loaded. The fix includes: 1) Store current selection with `const currentSelection = modelSelect.value;` before clearing dropdown, 2) After populating models, check if the previous selection exists in the updated model list, 3) If found, restore the selection with `modelSelect.value = currentSelection;`. This ensures Ollama model selections persist correctly across settings screen navigation and model refreshes.
+
+[x] Settings for model provider keys and model selection are preserved for Anthropic but not for other provider keys and model selections.
+
+Solution: Fixed provider configuration persistence by implementing separate storage for each provider's configuration. The solution includes: 1) Updated ProviderConfigManager to store individual provider configs in 'llmProviderConfigs' object instead of single 'llmConfig', maintaining 'activeProvider' setting, 2) Enhanced getCurrentConfig() and getProviderConfig() methods to handle both new and legacy storage formats for backward compatibility, 3) Modified setConfig() to save provider-specific configurations while maintaining active provider state, 4) Updated switchProvider() to restore existing provider configurations rather than creating defaults, 5) Enhanced sidepanel.js provider selection handler to restore saved configurations and populate fields when switching between providers, 6) Added comprehensive migration logic to convert legacy configurations to new format. Each provider now maintains its own API key, model selection, and settings independently, allowing users to switch between providers without losing their individual configurations.
 
 [x] Settings for model provider keys and model selection are not preserved when switching providers or reloading extension. Review how memos are preserved across screen switching and extension reloads. Apply this learning to fix settings. Find robust ways to fix this completely. There is a $1 million prize at stake!
 
