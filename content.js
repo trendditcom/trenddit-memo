@@ -8,6 +8,51 @@ if (!window.avnamMemoInitialized) {
         highlightedElement: null
     };
 
+    // Helper function to clean content
+    function cleanContent(node) {
+        // Remove unwanted elements
+        const unwantedTags = ['script', 'style', 'link', 'meta', 'noscript', 'iframe', 'object', 'embed'];
+        unwantedTags.forEach(tag => {
+            const elements = node.getElementsByTagName(tag);
+            [...elements].forEach(el => el.remove());
+        });
+        
+        // Remove all comments
+        const iterator = document.createNodeIterator(node, NodeFilter.SHOW_COMMENT);
+        let currentNode;
+        while (currentNode = iterator.nextNode()) {
+            currentNode.parentNode.removeChild(currentNode);
+        }
+        
+        // Clean all elements
+        const allElements = node.getElementsByTagName('*');
+        [...allElements].forEach(el => {
+            // Remove all attributes except a few essential ones
+            const allowedAttributes = ['href', 'src', 'alt', 'title'];
+            [...el.attributes].forEach(attr => {
+                if (!allowedAttributes.includes(attr.name)) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+            
+            // Remove empty elements that don't add value
+            const emptyTags = ['div', 'span', 'p', 'section', 'article'];
+            if (emptyTags.includes(el.tagName.toLowerCase()) && 
+                !el.textContent.trim() && 
+                !el.querySelector('img')) {
+                el.remove();
+            }
+        });
+        
+        // Clean whitespace and normalize text
+        node.innerHTML = node.innerHTML
+            .replace(/(\s{2,}|\n|\t|\r)/g, ' ')
+            .replace(/>\s+</g, '><')
+            .trim();
+        
+        return node;
+    }
+
     // Initialize the content script
     function initialize() {
         // Add styles for highlighting
@@ -59,6 +104,25 @@ if (!window.avnamMemoInitialized) {
                 handleYouTubeContent();
                 sendResponse({ success: true });
                 return;
+            }
+            
+            // Check if user has already selected text/images before activating hover mode
+            if (request.enabled && !isYouTubePage()) {
+                const userSelection = checkUserSelection();
+                if (userSelection.hasSelection) {
+                    console.log('User selection detected - processing selected content');
+                    
+                    // Notify user that selected content is being processed
+                    chrome.runtime.sendMessage({
+                        action: 'savingMemo',
+                        message: 'Processing user selected content'
+                    });
+                    
+                    // Process the selected content immediately
+                    handleSelectedContent(userSelection);
+                    sendResponse({ success: true });
+                    return;
+                }
             }
             
             window.avnamMemo.isHighlightMode = request.enabled;
@@ -149,51 +213,6 @@ if (!window.avnamMemoInitialized) {
         // Clone the element to strip inline styles and scripts
         const cleanElement = element.cloneNode(true);
         
-        // Function to clean content
-        function cleanContent(node) {
-            // Remove unwanted elements
-            const unwantedTags = ['script', 'style', 'link', 'meta', 'noscript', 'iframe', 'object', 'embed'];
-            unwantedTags.forEach(tag => {
-                const elements = node.getElementsByTagName(tag);
-                [...elements].forEach(el => el.remove());
-            });
-            
-            // Remove all comments
-            const iterator = document.createNodeIterator(node, NodeFilter.SHOW_COMMENT);
-            let currentNode;
-            while (currentNode = iterator.nextNode()) {
-                currentNode.parentNode.removeChild(currentNode);
-            }
-            
-            // Clean all elements
-            const allElements = node.getElementsByTagName('*');
-            [...allElements].forEach(el => {
-                // Remove all attributes except a few essential ones
-                const allowedAttributes = ['href', 'src', 'alt', 'title'];
-                [...el.attributes].forEach(attr => {
-                    if (!allowedAttributes.includes(attr.name)) {
-                        el.removeAttribute(attr.name);
-                    }
-                });
-                
-                // Remove empty elements that don't add value
-                const emptyTags = ['div', 'span', 'p', 'section', 'article'];
-                if (emptyTags.includes(el.tagName.toLowerCase()) && 
-                    !el.textContent.trim() && 
-                    !el.querySelector('img')) {
-                    el.remove();
-                }
-            });
-            
-            // Clean whitespace and normalize text
-            node.innerHTML = node.innerHTML
-                .replace(/(\s{2,}|\n|\t|\r)/g, ' ')
-                .replace(/>\s+</g, '><')
-                .trim();
-            
-            return node;
-        }
-        
         // Clean the content
         const cleanedElement = cleanContent(cleanElement);
         
@@ -249,6 +268,97 @@ if (!window.avnamMemoInitialized) {
             });
         }
     });
+
+    // Check if user has already selected text/images on the page
+    function checkUserSelection() {
+        const selection = window.getSelection();
+        let hasTextSelection = false;
+        let selectedText = '';
+        let selectedElement = null;
+        
+        // Check for text selection
+        if (selection && selection.toString().trim().length > 0) {
+            hasTextSelection = true;
+            selectedText = selection.toString().trim();
+            
+            // Get the container element that contains the selection
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                selectedElement = range.commonAncestorContainer;
+                
+                // If the common ancestor is a text node, get its parent element
+                if (selectedElement.nodeType === Node.TEXT_NODE) {
+                    selectedElement = selectedElement.parentElement;
+                }
+            }
+        }
+        
+        return {
+            hasSelection: hasTextSelection,
+            selectedText: selectedText,
+            selectedElement: selectedElement
+        };
+    }
+    
+    // Handle processing of user-selected content
+    function handleSelectedContent(userSelection) {
+        try {
+            let contentElement = userSelection.selectedElement;
+            let contentToProcess = '';
+            
+            // If we have a selected element, extract its content
+            if (contentElement) {
+                // Clone the element to avoid modifying the original
+                const clonedElement = contentElement.cloneNode(true);
+                
+                // Clean the content using the existing cleaning function
+                const cleanedElement = cleanContent(clonedElement);
+                contentToProcess = cleanedElement.innerHTML;
+            } else {
+                // Fallback: use just the selected text
+                contentToProcess = `<p>${userSelection.selectedText}</p>`;
+            }
+            
+            // Extract dominant image from the selected element if available
+            const dominantImage = contentElement ? extractDominantImage(contentElement) : null;
+            
+            const memoData = {
+                url: window.location.href,
+                favicon: document.querySelector('link[rel="icon"]')?.href || `${window.location.origin}/favicon.ico`,
+                timestamp: new Date().toISOString(),
+                rawHtml: contentToProcess,
+                dominantImage: dominantImage,
+                isUserSelection: true // Flag to indicate this was user-selected content
+            };
+            
+            console.log('Processing user selected content:', memoData);
+            
+            // Send the data to the background script
+            chrome.runtime.sendMessage({
+                action: 'processMemo',
+                data: memoData
+            }, (response) => {
+                if (!response) {
+                    console.error('No response received from background script');
+                    return;
+                }
+                
+                if (response.success) {
+                    console.log('User selected content processed successfully');
+                    // Clear the selection after successful processing
+                    window.getSelection().removeAllRanges();
+                } else {
+                    console.error('Failed to process user selected content:', response.error || 'Unknown error');
+                    alert('Failed to save selected content. Please try again.');
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error processing user selected content:', error);
+            alert('Failed to process selected content. Please try again.');
+        }
+    }
+    
 
     // YouTube-specific helper functions
     function isYouTubePage() {
