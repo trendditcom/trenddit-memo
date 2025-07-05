@@ -1125,44 +1125,246 @@ function updateTokenCount(memos, useSource = false) {
     tokenCountElement.textContent = `This chat will cost around ${tokenCount.toLocaleString()} tokens`;
 }
 
-// Simple markdown to HTML converter for chat messages
+// Advanced markdown to HTML converter with comprehensive features
 function convertMarkdownToHtml(markdown) {
     let html = markdown;
     
-    // Convert headers (# ## ###)
-    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold text-gray-800 mb-2">$1</h3>');
-    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold text-gray-800 mb-2">$1</h2>');
-    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold text-gray-800 mb-2">$1</h1>');
+    // Store code blocks and replace with placeholders to avoid processing their content
+    const codeBlocks = [];
+    let codeBlockIndex = 0;
     
-    // Convert bold text (**text** or __text__)
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
-    html = html.replace(/__(.*?)__/g, '<strong class="font-semibold">$1</strong>');
+    // Process fenced code blocks first
+    html = html.replace(/```([a-zA-Z0-9]*)\n([\s\S]*?)```/g, function(match, language, code) {
+        const placeholder = `[[CODEBLOCK_${codeBlockIndex}]]`;
+        const lang = language ? ` data-language="${language}"` : '';
+        // Escape HTML entities in code
+        const escapedCode = code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        codeBlocks[codeBlockIndex] = `<pre class="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-sm overflow-x-auto my-4 shadow-sm"${lang}><code class="text-gray-800">${escapedCode.trim()}</code></pre>`;
+        codeBlockIndex++;
+        return placeholder;
+    });
     
-    // Convert italic text (*text* or _text_)
-    html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
-    html = html.replace(/_(.*?)_/g, '<em class="italic">$1</em>');
+    // Store inline code and replace with placeholders
+    const inlineCodeBlocks = [];
+    let inlineCodeIndex = 0;
+    html = html.replace(/`([^`]+)`/g, function(match, code) {
+        const placeholder = `[[INLINECODE_${inlineCodeIndex}]]`;
+        // Escape HTML entities in inline code
+        const escapedCode = code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        inlineCodeBlocks[inlineCodeIndex] = `<code class="bg-gray-100 border border-gray-200 px-2 py-1 rounded text-sm font-mono text-gray-800">${escapedCode}</code>`;
+        inlineCodeIndex++;
+        return placeholder;
+    });
     
-    // Convert code blocks (```code```)
-    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 p-2 rounded text-sm font-mono overflow-x-auto my-2"><code>$1</code></pre>');
+    // Escape HTML entities to prevent XSS
+    html = html.replace(/&/g, '&amp;');
+    html = html.replace(/</g, '&lt;');
+    html = html.replace(/>/g, '&gt;');
+    html = html.replace(/"/g, '&quot;');
+    html = html.replace(/'/g, '&#39;');
     
-    // Convert inline code (`code`)
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
+    // Convert markdown tables with enhanced styling
+    html = html.replace(/(?:^|\n)((?:\|[^\n]+\|\n)+)/g, function(match, table) {
+        const lines = table.trim().split('\n');
+        if (lines.length < 2) return match;
+        
+        // Check if second line is a separator (contains only |, -, :, and spaces)
+        const separatorPattern = /^\|?[\s\-\:\|]*\|?$/;
+        if (!separatorPattern.test(lines[1])) return match;
+        
+        let tableHtml = '\n<div class="overflow-x-auto my-6"><table class="min-w-full border-collapse bg-white rounded-lg shadow-sm border border-gray-200">';
+        
+        // Process header row
+        const headerCells = lines[0].split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+        if (headerCells.length > 0) {
+            tableHtml += '<thead class="bg-gray-50"><tr>';
+            headerCells.forEach(cell => {
+                tableHtml += `<th class="border-b border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-700">${processInlineMarkdown(cell)}</th>`;
+            });
+            tableHtml += '</tr></thead>';
+        }
+        
+        // Process data rows
+        if (lines.length > 2) {
+            tableHtml += '<tbody class="divide-y divide-gray-200">';
+            for (let i = 2; i < lines.length; i++) {
+                const cells = lines[i].split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+                if (cells.length > 0) {
+                    const rowClass = (i - 2) % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                    tableHtml += `<tr class="${rowClass}">`;
+                    cells.forEach(cell => {
+                        tableHtml += `<td class="px-4 py-3 text-sm text-gray-700">${processInlineMarkdown(cell)}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                }
+            }
+            tableHtml += '</tbody>';
+        }
+        
+        tableHtml += '</table></div>\n';
+        return tableHtml;
+    });
     
-    // Convert links ([text](url))
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">$1</a>');
+    // Convert headers with proper hierarchy levels for UI consistency
+    html = html.replace(/^#### (.*$)/gm, '<h4 class="text-base font-semibold text-gray-800 mb-3 mt-4">$1</h4>');
+    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold text-gray-800 mb-3 mt-4">$1</h3>');
+    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold text-gray-800 mb-3 mt-4">$1</h2>');
+    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold text-gray-800 mb-4 mt-4">$1</h1>');
     
-    // Convert unordered lists (- item or * item)
-    html = html.replace(/^[\s]*[\-\*]\s+(.*)$/gm, '<li class="ml-4">$1</li>');
-    html = html.replace(/(<li.*<\/li>)/s, '<ul class="list-disc list-inside mb-2">$1</ul>');
+    // Convert horizontal rules
+    html = html.replace(/^(\*\*\*|---|___)$/gm, '<hr class="border-t border-gray-200 my-6">');
     
-    // Convert ordered lists (1. item)
-    html = html.replace(/^[\s]*\d+\.\s+(.*)$/gm, '<li class="ml-4">$1</li>');
-    html = html.replace(/(<li.*<\/li>)/s, '<ol class="list-decimal list-inside mb-2">$1</ol>');
+    // Convert blockquotes (handle multi-line blockquotes)
+    html = html.replace(/(?:^|\n)((?:> [^\n]*\n?)+)/g, function(match, quote) {
+        const content = quote.replace(/^> ?/gm, '').trim();
+        return '\n<blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4">' + content + '</blockquote>\n';
+    });
     
-    // Convert line breaks (preserve whitespace-pre-wrap behavior)
-    html = html.replace(/\n/g, '<br>');
+    // Process lists more accurately
+    html = processLists(html);
+    
+    // Convert task lists (checkboxes)
+    html = html.replace(/^[\s]*[\-\*]\s+\[([xX\s])\]\s+(.*)$/gm, function(match, checked, content) {
+        const isChecked = checked.toLowerCase() === 'x';
+        const checkboxClass = isChecked ? 'checked' : '';
+        const textClass = isChecked ? 'line-through text-gray-500' : '';
+        return `<div class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} disabled class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${checkboxClass}">
+            <span class="${textClass}">${processInlineMarkdown(content)}</span>
+        </div>`;
+    });
+    
+    // Process inline markdown elements
+    html = processInlineMarkdown(html);
+    
+    // Convert line breaks and paragraphs
+    const paragraphs = html.split(/\n\n+/);
+    html = paragraphs.map(p => {
+        p = p.trim();
+        if (p && !p.match(/^<[^>]+>/)) {
+            return `<p class="mb-4 text-gray-700">${p.replace(/\n/g, '<br>')}</p>`;
+        }
+        return p;
+    }).join('\n');
+    
+    // Restore code blocks
+    codeBlocks.forEach((block, index) => {
+        html = html.replace(`[[CODEBLOCK_${index}]]`, block);
+    });
+    
+    // Restore inline code
+    inlineCodeBlocks.forEach((block, index) => {
+        html = html.replace(`[[INLINECODE_${index}]]`, block);
+    });
     
     return html;
+}
+
+// Helper function to process inline markdown elements
+function processInlineMarkdown(text) {
+    // Convert strikethrough
+    text = text.replace(/~~(.*?)~~/g, '<s class="text-gray-500">$1</s>');
+    
+    // Convert bold text (**text** or __text__)
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-800">$1</strong>');
+    text = text.replace(/__(.*?)__/g, '<strong class="font-semibold text-gray-800">$1</strong>');
+    
+    // Convert italic text (*text* or _text_) - be careful not to conflict with bold
+    text = text.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em class="italic text-gray-700">$1</em>');
+    text = text.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em class="italic text-gray-700">$1</em>');
+    
+    // Convert links with enhanced styling
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:text-blue-800 underline font-medium" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Convert auto-links
+    text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    return text;
+}
+
+// Helper function to process lists with proper nesting
+function processLists(html) {
+    const lines = html.split('\n');
+    const result = [];
+    const listStack = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const unorderedMatch = line.match(/^(\s*)([\-\*\+])\s+(.*)$/);
+        const orderedMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+        
+        if (unorderedMatch) {
+            const [, indent, bullet, content] = unorderedMatch;
+            const level = Math.floor(indent.length / 2);
+            processListItem(result, listStack, 'ul', level, content);
+        } else if (orderedMatch) {
+            const [, indent, number, content] = orderedMatch;
+            const level = Math.floor(indent.length / 2);
+            processListItem(result, listStack, 'ol', level, content);
+        } else {
+            // Close all open lists if we encounter a non-list line
+            while (listStack.length > 0) {
+                const list = listStack.pop();
+                result.push(`</${list.type}>`);
+            }
+            result.push(line);
+        }
+    }
+    
+    // Close any remaining open lists
+    while (listStack.length > 0) {
+        const list = listStack.pop();
+        result.push(`</${list.type}>`);
+    }
+    
+    return result.join('\n');
+}
+
+// Helper function to process individual list items
+function processListItem(result, listStack, type, level, content) {
+    // Close lists that are deeper than the current level
+    while (listStack.length > level + 1) {
+        const list = listStack.pop();
+        result.push(`</${list.type}>`);
+    }
+    
+    // Open new lists if needed
+    while (listStack.length < level + 1) {
+        const newList = { type, level: listStack.length };
+        listStack.push(newList);
+        const listClass = type === 'ul' 
+            ? 'list-disc list-inside mb-4 space-y-1 text-gray-700' 
+            : 'list-decimal list-inside mb-4 space-y-1 text-gray-700';
+        const marginClass = listStack.length > 1 ? 'ml-6' : '';
+        result.push(`<${type} class="${listClass} ${marginClass}">`);
+    }
+    
+    // Check if the current list type matches
+    if (listStack.length > 0 && listStack[listStack.length - 1].type !== type) {
+        // Close the current list and open a new one of the correct type
+        result.push(`</${listStack[listStack.length - 1].type}>`);
+        listStack.pop();
+        const newList = { type, level: listStack.length };
+        listStack.push(newList);
+        const listClass = type === 'ul' 
+            ? 'list-disc list-inside mb-4 space-y-1 text-gray-700' 
+            : 'list-decimal list-inside mb-4 space-y-1 text-gray-700';
+        const marginClass = listStack.length > 1 ? 'ml-6' : '';
+        result.push(`<${type} class="${listClass} ${marginClass}">`);
+    }
+    
+    // Add the list item
+    result.push(`<li class="mb-1">${processInlineMarkdown(content)}</li>`);
 }
 
 // Add a message to the chat
